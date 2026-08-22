@@ -1,3 +1,39 @@
+export const FONT_SIZE_INITIAL = 42;
+export const FONT_SIZE_SMALL_INITIAL = 36;
+export const FONT_SIZE_ONE = 26;
+export const FONT_SIZE_SMALL_ONE = 24;
+export const FONT_SIZE_TWO = 22;
+export const FONT_SIZE_SMALL_TWO = 18;
+export const FONT_SIZE_THREE = 16;
+export const FONT_SIZE_SMALL_THREE = 15;
+export const FONT_SIZE_FOUR = 14;
+export const FONT_SIZE_SMALL_FOUR = 12;
+export const FONT_SIZE_FIVE = 10.5;
+export const FONT_SIZE_SMALL_FIVE = 9;
+export const FONT_SIZE_SIX = 7.5;
+export const FONT_SIZE_SMALL_SIX = 6.5;
+export const FONT_SIZE_SEVEN = 5.5;
+export const FONT_SIZE_EIGHT = 5;
+
+export const FONT_SIZE_MAP: Record<number, string> = {
+    [FONT_SIZE_INITIAL]: "初号",
+    [FONT_SIZE_SMALL_INITIAL]: "小初",
+    [FONT_SIZE_ONE]: "一号",
+    [FONT_SIZE_SMALL_ONE]: "小一",
+    [FONT_SIZE_TWO]: "二号",
+    [FONT_SIZE_SMALL_TWO]: "小二",
+    [FONT_SIZE_THREE]: "三号",
+    [FONT_SIZE_SMALL_THREE]: "小三",
+    [FONT_SIZE_FOUR]: "四号",
+    [FONT_SIZE_SMALL_FOUR]: "小四",
+    [FONT_SIZE_FIVE]: "五号",
+    [FONT_SIZE_SMALL_FIVE]: "小五",
+    [FONT_SIZE_SIX]: "六号",
+    [FONT_SIZE_SMALL_SIX]: "小六",
+    [FONT_SIZE_SEVEN]: "七号",
+    [FONT_SIZE_EIGHT]: "八号",
+};
+
 const chineseKeywords = ["小标宋", "黑体", "楷体", "仿宋", "宋体", "方正"];
 const westernWhitelist = ["Times New Roman", "Nimbus Roman"];
 
@@ -98,25 +134,6 @@ function sortByOrder(fonts: string[], order: string[]): string[] {
     return [...fonts].sort((a, b) => getIndex(a) - getIndex(b));
 }
 
-const fontSizeMap: Record<number, string> = {
-    5: "八号",
-    5.5: "七号",
-    6.5: "小六",
-    7.5: "六号",
-    9: "小五",
-    10.5: "五号",
-    12: "小四",
-    14: "四号",
-    15: "小三",
-    16: "三号",
-    18: "小二",
-    22: "二号",
-    24: "小一",
-    26: "一号",
-    36: "小初",
-    42: "初号",
-};
-
 export function getChineseFontSizeName(pt: number): string {
-    return fontSizeMap[pt] || "";
+    return FONT_SIZE_MAP[pt] || "";
 }

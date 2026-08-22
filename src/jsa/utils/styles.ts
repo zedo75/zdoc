@@ -43,12 +43,8 @@ export function makeAsciiStyle(fontGetter: (config: TypographyConfig) => string)
     };
 }
 
-export function setFontSize22() {
-    Application.Selection.Font.Size = 22;
-}
-
-export function setFontSize16() {
-    Application.Selection.Font.Size = 16;
+export function setFontSize(size: number) {
+    Application.Selection.Font.Size = size;
 }
 
 export function setFontFZ() {

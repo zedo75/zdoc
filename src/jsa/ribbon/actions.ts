@@ -19,11 +19,11 @@ import {
     setFontHei,
     setFontKai,
     setFontRoman,
-    setFontSize16,
-    setFontSize22,
+    setFontSize,
     setLineExactly,
 } from "@/jsa/utils/styles";
 import { useGovDocConfig } from "@/stores/govDocConfig";
+import { FONT_SIZE_THREE, FONT_SIZE_TWO } from "@/utils/fonts";
 
 interface RibbonAction {
     (): void;
@@ -69,8 +69,8 @@ const actionHandlers: Partial<Record<RibbonControlId, RibbonAction>> = {
         const url = window.location.origin + window.location.pathname + "?dialog=quick-style";
         Application.ShowDialog(url, "快捷样式", 360, 240, false);
     },
-    btnFontSize2: setFontSize22,
-    btnFontSize3: setFontSize16,
+    btnFontSize2: () => setFontSize(FONT_SIZE_TWO),
+    btnFontSize3: () => setFontSize(FONT_SIZE_THREE),
     btnFontFZ: setFontFZ,
     btnFontHei: setFontHei,
     btnFontKai: setFontKai,

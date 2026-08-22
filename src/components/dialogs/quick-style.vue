@@ -23,18 +23,13 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <button
+                        v-for="item in quickFontSizes"
+                        :key="item.value"
                         class="btn btn-blue"
-                        @click="setFontSize22"
-                        title="设置为二号字（22pt）"
+                        @click="setFontSize(item.value)"
+                        :title="item.title"
                     >
-                        二号
-                    </button>
-                    <button
-                        class="btn btn-blue"
-                        @click="setFontSize16"
-                        title="设置为三号字（16pt）"
-                    >
-                        三号
+                        {{ item.label }}
                     </button>
                 </div>
             </div>
@@ -87,16 +82,12 @@
                     <button
                         class="btn btn-cyan"
                         @click="setFontRoman"
-                        title="西文设为「Times New Roman」或「Nimbus Roman」字体"
+                        title="设为「Times New Roman」或「Nimbus Roman」字体"
                     >
-                        西文罗马体
+                        Roman 字体
                     </button>
-                    <button
-                        class="btn btn-cyan"
-                        @click="setFontAsciiToEast"
-                        title="西文使用中文字体"
-                    >
-                        西文同中文
+                    <button class="btn btn-cyan" @click="setFontAsciiToEast" title="使用中文字体">
+                        使用中文字体
                     </button>
                 </div>
             </div>
@@ -108,7 +99,11 @@
                     <span class="text-sm font-medium text-gray-500">行距</span>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button class="btn btn-amber" @click="setLineExactly" title="设置为固定行距">
+                    <button
+                        class="btn btn-amber"
+                        @click="setLineExactly"
+                        title="对应排版设置中「正文」的行距"
+                    >
                         固定行距
                     </button>
                 </div>
@@ -126,45 +121,58 @@ import {
     setFontHei,
     setFontKai,
     setFontRoman,
-    setFontSize16,
-    setFontSize22,
+    setFontSize,
     setLineExactly,
 } from "@/jsa/utils/styles";
+import {
+    FONT_SIZE_FOUR,
+    FONT_SIZE_THREE,
+    FONT_SIZE_TWO,
+    getChineseFontSizeName,
+} from "@/utils/fonts";
+
+const quickFontSizes = ref(
+    [FONT_SIZE_TWO, FONT_SIZE_THREE, FONT_SIZE_FOUR].map((pt) => ({
+        value: pt,
+        label: getChineseFontSizeName(pt),
+        title: `设置为${getChineseFontSizeName(pt)}字（${pt}pt）`,
+    })),
+);
 </script>
 
 <style scoped>
 /* ---------- 公共按钮基础样式 ---------- */
 .btn {
     @apply px-4 py-1 text-sm font-medium rounded-lg border transition-colors duration-200
-           focus:outline-none focus:ring-2 focus:ring-offset-2
-           active:shadow-inner;
+    focus:outline-none focus:ring-2 focus:ring-offset-2
+    active:shadow-inner;
 }
 
 /* ---------- 蓝色 — 字号 ---------- */
 .btn-blue {
-    @apply border-blue-200/70 text-blue-700 bg-white/60
-           hover:bg-blue-100/70 hover:border-blue-300 hover:text-blue-800
+    @apply border-blue-200/70 text-blue-700 bg-white/60 
+    hover:bg-blue-100/70 hover:border-blue-300 hover:text-blue-800 
            focus:ring-blue-200/60 active:bg-blue-200/70;
 }
 
 /* ---------- 紫色 — 中文字体 ---------- */
 .btn-purple {
-    @apply border-purple-200/70 text-purple-700 bg-white/60
-           hover:bg-purple-100/70 hover:border-purple-300 hover:text-purple-800
+    @apply border-purple-200/70 text-purple-700 bg-white/60 
+    hover:bg-purple-100/70 hover:border-purple-300 hover:text-purple-800 
            focus:ring-purple-200/60 active:bg-purple-200/70;
 }
 
 /* ---------- 青色 — 西文字体 ---------- */
 .btn-cyan {
-    @apply border-cyan-200/70 text-cyan-700 bg-white/60
-           hover:bg-cyan-100/70 hover:border-cyan-300 hover:text-cyan-800
+    @apply border-cyan-200/70 text-cyan-700 bg-white/60 
+    hover:bg-cyan-100/70 hover:border-cyan-300 hover:text-cyan-800
            focus:ring-cyan-200/60 active:bg-cyan-200/70;
 }
 
 /* ---------- 琥珀色 — 行距 ---------- */
 .btn-amber {
-    @apply border-amber-200/70 text-amber-700 bg-white/60
-           hover:bg-amber-100/70 hover:border-amber-300 hover:text-amber-800
+    @apply border-amber-200/70 text-amber-700 bg-white/60 
+    hover:bg-amber-100/70 hover:border-amber-300 hover:text-amber-800 
            focus:ring-amber-200/60 active:bg-amber-200/70;
 }
 
