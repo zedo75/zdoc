@@ -41,9 +41,9 @@ const actionHandlers: Partial<Record<RibbonControlId, RibbonAction>> = {
         quickFormat(config);
     },
     btnTypoConfig: () => toggleTaskPane(STORAGE_KEYS.DOC_SETTINGS_ID),
-    btnImageTypo: () => withUndoRecord("排版图片", formatInlineImages),
+    btnImageTypo: () => withUndoRecord(formatInlineImages),
     btnTableTypo: () => {},
-    btnJustifyAttach: () => withUndoRecord("对齐附件", formatAttachments),
+    btnJustifyAttach: () => withUndoRecord(formatAttachments),
 
     // 格式专区
     btnClearFormat: () => {
@@ -61,7 +61,7 @@ const actionHandlers: Partial<Record<RibbonControlId, RibbonAction>> = {
         const msg = deleteNonBuiltInStyles();
         wpsAlert(msg);
     },
-    btnRemoveShading: () => withUndoRecord("清除底纹背景", removeShadingBackground),
+    btnRemoveShading: () => withUndoRecord(removeShadingBackground),
     btnHeaderFooter: () => toggleTaskPane(STORAGE_KEYS.HEADER_FOOTER_TASKPANE_ID),
 
     // 快捷样式

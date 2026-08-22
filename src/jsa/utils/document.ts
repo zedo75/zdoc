@@ -44,19 +44,27 @@ export function getClipboardText(): string {
     return clipText;
 }
 
+// 重载签名
+export function withUndoRecord<T>(undoName: string, action: () => T): T;
+export function withUndoRecord<T>(action: () => T): T;
+
 /**
  * 执行带撤销快照的通用操作
  * @param {string} undoName - 显示在撤销列表中的名称
  * @param {Function} action - 要执行的业务函数（可以返回任意值）
  * @returns action 的返回值
  */
-export function withUndoRecord<T = void>(undoName: string = "", action: () => T): T {
+export function withUndoRecord<T>(undoNameOrAction: string | (() => T), action?: () => T): T {
+    const undoName =
+        typeof undoNameOrAction === "string" ? undoNameOrAction : undoNameOrAction.name || "";
+    const actionFn = typeof undoNameOrAction === "string" ? action! : undoNameOrAction;
+
     Application.ScreenUpdating = false;
     Application.EnableEvents = false;
     const record = Application.UndoRecord;
     record.StartCustomRecord(undoName);
     try {
-        return action();
+        return actionFn();
     } finally {
         record.EndCustomRecord();
         Application.ScreenUpdating = true;
