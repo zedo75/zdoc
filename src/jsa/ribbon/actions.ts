@@ -9,6 +9,12 @@ import { convertNumberingToStatic } from "@/jsa/commands/field";
 import { quickFormat } from "@/jsa/commands/govDoc";
 import { exportAllImages, formatInlineImages } from "@/jsa/commands/image";
 import { viewMailSourceInfo } from "@/jsa/commands/mergeMail";
+import {
+    convertAlphaNumToHalfWidth,
+    convertPunctuationToFullWidth,
+    correctPunctuation,
+    openWpsChangeCaseDialog,
+} from "@/jsa/commands/punctuation";
 import { toggleTaskPane } from "@/jsa/ribbon/taskPane";
 import { withUndoRecord } from "@/jsa/utils/document";
 import { STORAGE_KEYS } from "@/jsa/utils/storage";
@@ -98,9 +104,11 @@ const actionHandlers: Partial<Record<RibbonControlId, RibbonAction>> = {
             else convertSpaceToIndent();
         }),
 
-    btnFullHalfWidth: () => {
-        Application.Dialogs.Item(wdDialogFormatChangeCase).Show();
-    },
+    btnConvertPunctuation: () => withUndoRecord(convertPunctuationToFullWidth),
+    btnConvertAlphaNum: () => withUndoRecord(convertAlphaNumToHalfWidth),
+    btnCorrectPunctuation: () => withUndoRecord(correctPunctuation),
+    btnChangeCase: () => withUndoRecord(openWpsChangeCaseDialog),
+
     btnTextViewCompare: () => toggleTaskPane(STORAGE_KEYS.TEXT_COMPARE_TASKPANE_ID),
 
     btnNumberToStatic: convertNumberingToStatic,

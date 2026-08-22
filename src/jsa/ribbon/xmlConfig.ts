@@ -130,7 +130,12 @@ export const xmlConfig = RibbonBuilder.create({
                 ]),
                 button("清除空段落", "btnClearEmptyPara", { imageMso: "DeleteBlankParagraph" }),
                 button("正则替换", "btnRegexReplace", { imageMso: "Replace" }),
-                button("标点全半角转换", "btnFullHalfWidth", { imageMso: "ChangeCase" }),
+                menu("全半角转换", "mnuFullHalfWidth", { imageMso: "ChangeCase", size: "large" }, [
+                    button("英文标点转全角", "btnConvertPunctuation"),
+                    button("字母数字转半角", "btnConvertAlphaNum"),
+                    button("标点符号更正", "btnCorrectPunctuation"),
+                    button("更改大小写", "btnChangeCase"),
+                ]),
             ]),
             group("其他", "grp222", [
                 menu("修订", "mnu修订", { imageMso: "TrackChanges" }, [
