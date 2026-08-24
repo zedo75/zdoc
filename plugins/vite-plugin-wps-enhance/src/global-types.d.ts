@@ -68,4 +68,11 @@ declare global {
      * ActiveDocument 裸名引用（等同于 `Application.ActiveDocument`）。
      */
     const ActiveDocument: Wps.Document;
+
+    /**
+     * 等同于 `Application.Selection`
+     *
+     * 折中方案，类型提示无法覆盖原生 Selection
+     */
+    const wpsSelection: Wps.Selection;
 }

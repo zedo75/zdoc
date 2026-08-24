@@ -51,14 +51,6 @@ if (typeof window.wpsAlert === 'undefined') {
     window.wpsAlert = wpsAlert;
     window.wpsConfirm = wpsConfirm;
 }
-// @ts-ignore
-if (typeof window.ActiveDocument === 'undefined') {
-    Object.defineProperty(window, 'ActiveDocument', {
-        get() { return Application.ActiveDocument; },
-        enumerable: false,
-        configurable: false,
-    });
-}
 `;
 }
 
@@ -123,6 +115,15 @@ export function wpsEnhancePlugin(options: WpsEnhanceOptions): Plugin {
         name: "vite-plugin-wps-enhance",
         config(_, { command }) {
             isDev = command === "serve";
+
+            // 在 config 钩子中返回要合并的配置
+            return {
+                define: {
+                    ActiveDocument: "Application.ActiveDocument",
+                    ActiveWindow: "Application.ActiveWindow",
+                    wpsSelection: "Application.Selection",
+                },
+            };
         },
         configResolved(resolved) {
             root = resolved.root;
