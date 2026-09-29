@@ -5,53 +5,69 @@
                 <label class="text-sm font-medium text-gray-700 whitespace-nowrap">
                     页眉内容：
                 </label>
-                <n-input
-                    v-model:value="localConfig.content"
+                <el-input
+                    v-model="localConfig.content"
                     placeholder="请输入页眉内容"
                     size="small"
                     class="flex-1"
+                    style="width: 100%"
                     clearable
                 />
             </div>
 
             <div class="flex items-center">
                 <label class="text-sm font-medium text-gray-700">字体：</label>
-                <n-select
-                    v-model:value="localConfig.font"
-                    :options="chineseFontOptions"
+                <el-select
+                    v-model="localConfig.font"
                     size="small"
                     class="flex-1"
+                    style="width: 100%"
                     placeholder="选择字体"
-                />
+                >
+                    <el-option
+                        v-for="opt in chineseFontOptions"
+                        :key="opt.value"
+                        :label="opt.label"
+                        :value="opt.value"
+                    />
+                </el-select>
             </div>
 
             <div class="flex items-center">
-                <label class="text-sm font-medium text-gray-700">字号：</label>
-                <n-input-number
-                    v-model:value="localConfig.fontSize"
+                <label class="text-sm font-medium text-gray-700">
+                    字号：
+                    <span class="text-gray-400 text-xs ml-1">
+                        {{ getChineseFontSizeName(localConfig.fontSize) }}
+                    </span>
+                </label>
+                <el-input-number
+                    v-model="localConfig.fontSize"
                     :min="0"
                     :step="1"
                     size="small"
+                    controls-position="right"
                     class="flex-1"
+                    style="width: 100%"
                     v-wheel-change
-                >
-                    <template #suffix>
-                        <span class="text-gray-400 text-xs ml-1">
-                            {{ getChineseFontSizeName(localConfig.fontSize) }}
-                        </span>
-                    </template>
-                </n-input-number>
+                />
             </div>
 
             <div class="flex items-center w-full">
                 <label class="text-sm font-medium text-gray-700">位置：</label>
-                <n-select
-                    v-model:value="localConfig.position"
-                    :options="positionOptions"
+                <el-select
+                    v-model="localConfig.position"
                     size="small"
                     filterable
                     class="flex-1"
-                />
+                    style="width: 100%"
+                >
+                    <el-option
+                        v-for="opt in positionOptions"
+                        :key="opt.value"
+                        :label="opt.label"
+                        :value="opt.value"
+                    />
+                </el-select>
             </div>
         </div>
     </div>

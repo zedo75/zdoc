@@ -7,50 +7,67 @@
             <div class="grid grid-cols-2 gap-3 mb-3">
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">中文字体</label>
-                    <n-select
-                        v-model:value="localConfig.title.zh"
-                        :options="chineseFontOptions"
+                    <el-select
+                        v-model="localConfig.title.zh"
                         size="small"
                         filterable
-                    />
+                        style="width: 100%"
+                    >
+                        <el-option
+                            v-for="opt in chineseFontOptions"
+                            :key="opt.value"
+                            :label="opt.label"
+                            :value="opt.value"
+                        />
+                    </el-select>
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">西文字体</label>
-                    <n-select
-                        v-model:value="localConfig.title.en"
-                        :options="titleWesternOptions"
+                    <el-select
+                        v-model="localConfig.title.en"
                         size="small"
                         filterable
-                    />
+                        style="width: 100%"
+                    >
+                        <el-option
+                            v-for="opt in titleWesternOptions"
+                            :key="opt.value"
+                            :label="opt.label"
+                            :value="opt.value"
+                        />
+                    </el-select>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">字号(pt)</label>
-                    <n-input-number
-                        v-model:value="localConfig.title.size"
+                    <label class="block text-xs text-gray-500 mb-1">
+                        字号(pt)
+                        <span class="text-gray-400 ml-1">
+                            {{ getChineseFontSizeName(localConfig.title.size) }}
+                        </span>
+                    </label>
+                    <el-input-number
+                        v-model="localConfig.title.size"
                         :min="0"
                         :step="1"
                         size="small"
+                        controls-position="right"
                         class="w-full"
+                        style="width: 100%"
                         v-wheel-change
-                    >
-                        <template #suffix>
-                            <span class="text-gray-400 text-xs ml-1">
-                                {{ getChineseFontSizeName(localConfig.title.size) }}
-                            </span>
-                        </template>
-                    </n-input-number>
+                    />
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">行距(固定值)</label>
-                    <n-input-number
-                        v-model:value="localConfig.title.spacing"
+                    <el-input-number
+                        v-model="localConfig.title.spacing"
                         :min="0"
                         :step="0.05"
                         size="small"
+                        controls-position="right"
                         :precision="2"
                         class="w-full"
+                        style="width: 100%"
                     />
                 </div>
             </div>
@@ -63,60 +80,71 @@
             <div class="grid grid-cols-2 gap-3 mb-3">
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">中文字体</label>
-                    <n-select
-                        v-model:value="localConfig.main.zh"
-                        :options="chineseFontOptions"
-                        size="small"
-                    />
+                    <el-select v-model="localConfig.main.zh" size="small" style="width: 100%">
+                        <el-option
+                            v-for="opt in chineseFontOptions"
+                            :key="opt.value"
+                            :label="opt.label"
+                            :value="opt.value"
+                        />
+                    </el-select>
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">西文字体</label>
-                    <n-select
-                        v-model:value="localConfig.main.en"
-                        :options="mainWesternOptions"
-                        size="small"
-                    />
+                    <el-select v-model="localConfig.main.en" size="small" style="width: 100%">
+                        <el-option
+                            v-for="opt in mainWesternOptions"
+                            :key="opt.value"
+                            :label="opt.label"
+                            :value="opt.value"
+                        />
+                    </el-select>
                 </div>
             </div>
             <div class="grid grid-cols-3 gap-3">
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">首行缩进(字符)</label>
-                    <n-input-number
-                        v-model:value="localConfig.main.indent"
+                    <el-input-number
+                        v-model="localConfig.main.indent"
                         :min="0"
                         :step="0.5"
                         size="small"
+                        controls-position="right"
                         :precision="1"
                         class="w-full"
+                        style="width: 100%"
                         v-wheel-change
                     />
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">字号(pt)</label>
-                    <n-input-number
-                        v-model:value="localConfig.main.size"
+                    <label class="block text-xs text-gray-500 mb-1">
+                        字号(pt)
+                        <span class="text-gray-400 ml-1">
+                            {{ getChineseFontSizeName(localConfig.main.size) }}
+                        </span>
+                    </label>
+                    <el-input-number
+                        v-model="localConfig.main.size"
                         :min="0"
                         :step="1"
                         size="small"
+                        controls-position="right"
                         class="w-full"
+                        style="width: 100%"
                         v-wheel-change
-                    >
-                        <template #suffix>
-                            <span class="text-gray-400 text-xs ml-1">
-                                {{ getChineseFontSizeName(localConfig.main.size) }}
-                            </span>
-                        </template>
-                    </n-input-number>
+                    />
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">行距(固定值)</label>
-                    <n-input-number
-                        v-model:value="localConfig.main.spacing"
+                    <el-input-number
+                        v-model="localConfig.main.spacing"
                         :min="0"
                         :step="0.05"
                         size="small"
+                        controls-position="right"
                         :precision="2"
                         class="w-full"
+                        style="width: 100%"
                     />
                 </div>
             </div>
@@ -127,52 +155,87 @@
             <div class="flex flex-col gap-2">
                 <div class="flex items-center gap-2">
                     <span class="text-xs text-gray-500 w-16">主送机关</span>
-                    <n-select
-                        v-model:value="localConfig.salutation.font"
-                        :options="chineseFontOptions"
+                    <el-select
+                        v-model="localConfig.salutation.font"
                         size="small"
                         class="flex-1 min-w-0"
-                    />
-                    <n-checkbox v-model:checked="localConfig.salutation.bold">加粗</n-checkbox>
+                        style="width: 100%"
+                    >
+                        <el-option
+                            v-for="opt in chineseFontOptions"
+                            :key="opt.value"
+                            :label="opt.label"
+                            :value="opt.value"
+                        />
+                    </el-select>
+                    <el-checkbox v-model="localConfig.salutation.bold">加粗</el-checkbox>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="text-xs text-gray-500 w-16">一级标题</span>
-                    <n-select
-                        v-model:value="localConfig.h1.font"
-                        :options="chineseFontOptions"
+                    <el-select
+                        v-model="localConfig.h1.font"
                         size="small"
                         class="flex-1 min-w-0"
-                    />
-                    <n-checkbox v-model:checked="localConfig.h1.bold">加粗</n-checkbox>
+                        style="width: 100%"
+                    >
+                        <el-option
+                            v-for="opt in chineseFontOptions"
+                            :key="opt.value"
+                            :label="opt.label"
+                            :value="opt.value"
+                        />
+                    </el-select>
+                    <el-checkbox v-model="localConfig.h1.bold">加粗</el-checkbox>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="text-xs text-gray-500 w-16">二级标题</span>
-                    <n-select
-                        v-model:value="localConfig.h2.font"
-                        :options="chineseFontOptions"
+                    <el-select
+                        v-model="localConfig.h2.font"
                         size="small"
                         class="flex-1 min-w-0"
-                    />
-                    <n-checkbox v-model:checked="localConfig.h2.bold">加粗</n-checkbox>
+                        style="width: 100%"
+                    >
+                        <el-option
+                            v-for="opt in chineseFontOptions"
+                            :key="opt.value"
+                            :label="opt.label"
+                            :value="opt.value"
+                        />
+                    </el-select>
+                    <el-checkbox v-model="localConfig.h2.bold">加粗</el-checkbox>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="text-xs text-gray-500 w-16">三级标题</span>
-                    <n-select
-                        v-model:value="localConfig.h3.font"
-                        :options="chineseFontOptions"
+                    <el-select
+                        v-model="localConfig.h3.font"
                         size="small"
                         class="flex-1 min-w-0"
-                    />
-                    <n-checkbox v-model:checked="localConfig.h3.bold">加粗</n-checkbox>
+                        style="width: 100%"
+                    >
+                        <el-option
+                            v-for="opt in chineseFontOptions"
+                            :key="opt.value"
+                            :label="opt.label"
+                            :value="opt.value"
+                        />
+                    </el-select>
+                    <el-checkbox v-model="localConfig.h3.bold">加粗</el-checkbox>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="text-xs text-gray-500 w-16">小标题加粗</span>
-                    <n-select
-                        v-model:value="localConfig.topicBoldMode"
-                        :options="topicBoldModeOptions"
+                    <el-select
+                        v-model="localConfig.topicBoldMode"
                         size="small"
                         class="flex-1 min-w-0"
-                    />
+                        style="width: 100%"
+                    >
+                        <el-option
+                            v-for="opt in topicBoldModeOptions"
+                            :key="opt.value"
+                            :label="opt.label"
+                            :value="opt.value"
+                        />
+                    </el-select>
                     <div class="w-8"></div>
                 </div>
             </div>
@@ -268,12 +331,10 @@ defineExpose({
 </script>
 
 <style scoped>
-/* 缩小 Select 下拉菜单的字体和间距 */
-.n-base-select-menu .n-base-select-option {
+/* 缩小 Select 下拉菜单的字体和间距（Element Plus 版） */
+:deep(.el-select-dropdown__item) {
     font-size: 12px;
-}
-
-.n-base-select-menu.n-base-select-menu--medium-size.n-select-menu {
-    --n-option-height: 28px !important;
+    height: 28px;
+    line-height: 28px;
 }
 </style>

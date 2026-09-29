@@ -1,16 +1,11 @@
 <template>
     <div class="max-w-[600px] mx-auto p-5">
         <h2 class="text-xl font-bold mb-4">全部页面</h2>
-        <n-list>
-            <n-list-item v-for="route in visibleRoutes" :key="route.path">
-                <router-link
-                    :to="route.path"
-                    class="no-underline block text-inherit hover:bg-[#f0f0f0] transition-colors rounded px-3 py-2 -mx-3"
-                >
-                    <n-thing :title="String(route.name) || route.path" />
-                </router-link>
-            </n-list-item>
-        </n-list>
+        <el-menu router class="border-none">
+            <el-menu-item v-for="route in visibleRoutes" :key="route.path" :index="route.path">
+                {{ String(route.name) || route.path }}
+            </el-menu-item>
+        </el-menu>
     </div>
 </template>
 

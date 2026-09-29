@@ -4,7 +4,7 @@ import legacy from "@vitejs/plugin-legacy";
 import vue from "@vitejs/plugin-vue";
 import { scanUsedEnums, wpsEnhancePlugin } from "#vite-plugin-wps-enhance";
 import AutoImport from "unplugin-auto-import/vite";
-import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
+import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
 import Components from "unplugin-vue-components/vite";
 import { defineConfig } from "vite";
 import bundleObfuscator from "vite-plugin-bundle-obfuscator";
@@ -58,18 +58,20 @@ export default defineConfig({
             enum: {},
         }),
         AutoImport({
-            resolvers: [NaiveUiResolver()],
-            imports: [
-                "vue",
-                "vue-router",
-                {
-                    "naive-ui": ["useDialog", "useMessage", "useNotification", "useLoadingBar"],
-                },
+            resolvers: [
+                ElementPlusResolver({
+                    importStyle: "sass", // 或 'css'，必须显式声明，否则样式不会被导入
+                }),
             ],
+            imports: ["vue", "vue-router"],
             dts: "src/auto-imports.d.ts",
         }),
         Components({
-            resolvers: [NaiveUiResolver()],
+            resolvers: [
+                ElementPlusResolver({
+                    importStyle: "sass", // 同样需要显式声明
+                }),
+            ],
             dts: "src/components.d.ts",
             // 仅扫描必要目录
             dirs: ["src/components", "src/views"],

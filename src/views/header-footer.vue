@@ -1,6 +1,6 @@
 <template>
     <div class="flex flex-col h-screen bg-gray-50">
-        <n-scrollbar class="flex-1 min-h-0">
+        <el-scrollbar class="flex-1 min-h-0">
             <div class="p-4">
                 <div class="mb-6 text-center">
                     <h1 class="text-xl font-semibold text-gray-800">页眉页脚设置</h1>
@@ -12,12 +12,14 @@
                             页眉距离
                         </label>
                         <div class="flex flex-1 items-center gap-1">
-                            <n-input-number
-                                v-model:value="header.distance"
+                            <el-input-number
+                                v-model="header.distance"
                                 :min="0"
                                 :step="0.1"
-                                size="medium"
+                                size="default"
+                                controls-position="right"
                                 class="flex-1"
+                                style="width: 100%"
                                 v-wheel-change
                             />
                             <span class="text-sm text-gray-400">cm</span>
@@ -29,12 +31,14 @@
                             页脚距离
                         </label>
                         <div class="flex flex-1 items-center gap-1">
-                            <n-input-number
-                                v-model:value="footer.distance"
+                            <el-input-number
+                                v-model="footer.distance"
                                 :min="0"
                                 :step="0.1"
-                                size="medium"
+                                size="default"
+                                controls-position="right"
                                 class="flex-1"
+                                style="width: 100%"
                                 v-wheel-change
                             />
                             <span class="text-sm text-gray-400">cm</span>
@@ -42,86 +46,115 @@
                     </div>
                 </div>
 
-                <n-collapse
-                    :default-expanded-names="['header', 'footer']"
-                    :accordion="false"
-                    class="collapse-panel"
-                    :trigger-areas="['main', 'arrow']"
-                >
-                    <n-collapse-item name="header">
-                        <template #header>
-                            <img
-                                src="/images/header.svg"
-                                alt="页眉设置"
-                                class="w-4 h-4 inline-block mr-1"
-                            />
-                            <span>页眉设置</span>
-                        </template>
-                        <template #header-extra>
-                            <div class="flex gap-2">
-                                <n-button size="small" round type="info" @click="applyHeader">
-                                    应用
-                                </n-button>
-                                <n-button size="small" round type="warning" @click="removeHeader">
-                                    删除
-                                </n-button>
-                                <n-button size="small" round @click="resetDefaultHeader">
-                                    重置
-                                </n-button>
+                <el-collapse v-model="activeNames" class="collapse-panel">
+                    <el-collapse-item name="header">
+                        <template #title>
+                            <div class="flex items-center justify-between w-full">
+                                <div class="flex items-center">
+                                    <img
+                                        src="/images/header.svg"
+                                        alt="页眉设置"
+                                        class="w-4 h-4 inline-block mr-1"
+                                    />
+                                    <span>页眉设置</span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <el-button
+                                        size="small"
+                                        round
+                                        type="info"
+                                        @click.stop="applyHeader"
+                                    >
+                                        应用
+                                    </el-button>
+                                    <el-button
+                                        size="small"
+                                        round
+                                        type="warning"
+                                        @click.stop="removeHeader"
+                                    >
+                                        删除
+                                    </el-button>
+                                    <el-button size="small" round @click.stop="resetDefaultHeader">
+                                        重置
+                                    </el-button>
+                                </div>
                             </div>
                         </template>
 
                         <!-- 传入 store 中的 header 配置 -->
                         <HeaderSettings v-model="header" />
-                    </n-collapse-item>
+                    </el-collapse-item>
 
-                    <n-collapse-item name="footer">
-                        <template #header>
-                            <img
-                                src="/images/footer.svg"
-                                alt="页脚设置"
-                                class="w-4 h-4 inline-block mr-1"
-                            />
-                            <span>页脚设置</span>
-                        </template>
-                        <template #header-extra>
-                            <div class="flex gap-2">
-                                <n-button size="small" round type="info" @click="applyFooter">
-                                    应用
-                                </n-button>
-                                <n-button size="small" round type="warning" @click="removeFooter">
-                                    删除
-                                </n-button>
-                                <n-button size="small" round @click="resetDefaultFooter">
-                                    重置
-                                </n-button>
+                    <el-collapse-item name="footer">
+                        <template #title>
+                            <div class="flex items-center justify-between w-full">
+                                <div class="flex items-center">
+                                    <img
+                                        src="/images/footer.svg"
+                                        alt="页脚设置"
+                                        class="w-4 h-4 inline-block mr-1"
+                                    />
+                                    <span>页脚设置</span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <el-button
+                                        size="small"
+                                        round
+                                        type="info"
+                                        @click.stop="applyFooter"
+                                    >
+                                        应用
+                                    </el-button>
+                                    <el-button
+                                        size="small"
+                                        round
+                                        type="warning"
+                                        @click.stop="removeFooter"
+                                    >
+                                        删除
+                                    </el-button>
+                                    <el-button size="small" round @click.stop="resetDefaultFooter">
+                                        重置
+                                    </el-button>
+                                </div>
                             </div>
                         </template>
 
                         <FooterSettings v-model="footer" />
 
                         <!-- 状态提示 -->
-                        <n-alert v-if="hasPageNum" type="info" size="small" class="mt-4">
-                            当前文档已设置页脚页码
-                        </n-alert>
-                        <n-alert v-else type="warning" size="small" class="mt-4">
-                            当前文档未检测到页码
-                        </n-alert>
-                    </n-collapse-item>
-                </n-collapse>
+                        <el-alert
+                            v-if="hasPageNum"
+                            type="info"
+                            class="mt-4"
+                            :closable="false"
+                            title="当前文档已设置页脚页码"
+                        />
+                        <el-alert
+                            v-else
+                            type="warning"
+                            class="mt-4"
+                            :closable="false"
+                            title="当前文档未检测到页码"
+                        />
+                    </el-collapse-item>
+                </el-collapse>
             </div>
-        </n-scrollbar>
+        </el-scrollbar>
 
         <div
             class="flex flex-wrap items-center justify-around p-5 border-t border-gray-200 bg-white"
         >
-            <n-button @click="importConfig">载入配置</n-button>
-            <n-button @click="saveConfig">保存配置</n-button>
+            <el-button @click="importConfig">载入配置</el-button>
+            <el-button @click="saveConfig">保存配置</el-button>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
+import { ElMessage, ElNotification } from "element-plus";
+
 import FooterSettings from "@/components/FooterSettings.vue";
 import HeaderSettings from "@/components/HeaderSettings.vue";
 import { DEFAULT_FOOTER_CONFIG, DEFAULT_HEADER_CONFIG } from "@/config/defaults";
@@ -130,12 +163,10 @@ import { addFooterPagenum, hasPagenum, removePagenum } from "@/jsa/commands/page
 import { refreshDocumentView } from "@/jsa/utils/document";
 import { useGovDocConfig } from "@/stores/govDocConfig";
 
-const message = useMessage();
-const notification = useNotification();
-
 const config = useGovDocConfig();
 const { header, footer } = config;
 
+const activeNames = ref(["header", "footer"]);
 const hasPageNum = ref(false);
 
 function checkPageNum() {
@@ -151,18 +182,18 @@ function applyHeader() {
     const { content, position, font, fontSize, distance } = header.value;
     setHeader(content, position, font, fontSize, distance);
     refreshDocumentView();
-    message.info("已修改页眉");
+    ElMessage.primary("已修改页眉");
 }
 
 function removeHeader() {
     removeAllHeaders();
     refreshDocumentView();
-    message.info("已移除页眉");
+    ElMessage.primary("已移除页眉");
 }
 
 function resetDefaultHeader() {
     header.value = { ...DEFAULT_HEADER_CONFIG };
-    message.info("页眉配置已恢复默认");
+    ElMessage.primary("页眉配置已恢复默认");
 }
 
 // ---- 页脚操作 ----
@@ -170,10 +201,10 @@ function applyFooter() {
     try {
         addFooterPagenum(footer.value);
         checkPageNum();
-        message.success("页码已插入/更新");
+        ElMessage.success("页码已插入/更新");
     } catch (e) {
         console.warn(e);
-        message.error("插入页码失败，请确认处于 WPS 环境中");
+        ElMessage.error("插入页码失败，请确认处于 WPS 环境中");
     }
 }
 
@@ -181,36 +212,35 @@ function removeFooter() {
     try {
         removePagenum();
         checkPageNum();
-        message.success("所有页码已删除");
+        ElMessage.success("所有页码已删除");
         refreshDocumentView();
     } catch (e) {
         console.warn(e);
-        message.error("删除页码失败");
+        ElMessage.error("删除页码失败");
     }
 }
 
 function resetDefaultFooter() {
     footer.value = { ...DEFAULT_FOOTER_CONFIG };
-    message.info("页脚配置已恢复默认");
+    ElMessage.primary("页脚配置已恢复默认");
 }
 
 function saveConfig() {
     const result = config.saveToFile();
     if (result.success) {
-        notification.success({
+        ElNotification.success({
             title: "保存成功",
-            content: "文件路径：" + result.path,
+            message: "文件路径：" + result.path,
             duration: 3000,
-            keepAliveOnHover: true,
         });
     } else {
-        message.error("保存失败，路径：" + result.path);
+        ElMessage.error("保存失败，路径：" + result.path);
     }
 }
 
 function importConfig() {
     config.loadFromFile();
-    message.success("已从配置文件重新载入");
+    ElMessage.success("已从配置文件重新载入");
 }
 
 onMounted(() => {

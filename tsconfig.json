@@ -8,7 +8,7 @@
         },
         "module": "es2020", // 指定生成的模块代码标准（ES2020 支持动态 import、import.meta 等）
         "target": "es6", // 指定编译后的 JavaScript 目标版本（ES6/ES2015）
-        "types": ["vite/client", "node", "vue-router/auto"], // 包含的类型声明文件
+        "types": ["vite/client", "node", "vue-router/auto", "element-plus/global"], // 包含的类型声明文件
         "moduleResolution": "Bundler",
 
         "sourceMap": true, // 生成源映射文件（.map），便于调试

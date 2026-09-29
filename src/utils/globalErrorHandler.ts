@@ -1,9 +1,7 @@
 import type { App } from "vue";
 
-import { createDiscreteApi } from "naive-ui";
+import { ElMessage, ElNotification } from "element-plus";
 import { throttle } from "radash";
-
-const { message, notification } = createDiscreteApi(["message", "notification"]);
 
 // 判断是否为 WPS / Office 环境缺失错误
 function isWpsMissingError(err: unknown): boolean {
@@ -31,19 +29,14 @@ function handleErrorRaw(err: unknown, _instance: any, _info: string) {
         userMessage = err.message;
     }
 
-    // 使用 Naive UI 展示提示
     if (isEnvError) {
-        notification.error({
+        ElNotification.error({
             title: "环境异常",
-            content: userMessage,
+            message: userMessage,
             duration: 5000,
-            keepAliveOnHover: true,
         });
     } else {
-        message.error(userMessage, {
-            duration: 3000,
-            keepAliveOnHover: true,
-        });
+        ElMessage.error(userMessage);
     }
 
     // 生产环境
@@ -56,13 +49,13 @@ function handleUnhandledRejectionRaw(event: PromiseRejectionEvent) {
     const reason = event.reason;
 
     if (isWpsMissingError(reason)) {
-        notification.error({
+        ElNotification.error({
             title: "环境未就绪",
-            content: "WPS 对象未定义，请检查加载项是否在 WPS 环境中运行",
+            message: "WPS 对象未定义，请检查加载项是否在 WPS 环境中运行",
             duration: 5000,
         });
     } else {
-        message.error(reason?.message || "未捕获的异步错误", { duration: 3000 });
+        ElMessage.error(reason?.message || "未捕获的异步错误");
     }
     console.error("Unhandled Rejection:", reason);
 }

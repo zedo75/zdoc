@@ -2,6 +2,9 @@ import { createApp } from "vue";
 
 import "@/styles/main.css";
 
+import "element-plus/theme-chalk/el-message.css";
+import "element-plus/theme-chalk/el-notification.css";
+
 // 类型声明：让 TS 知道 import.meta.glob 的返回类型
 interface DialogModules {
     [key: string]: () => Promise<{ default: import("vue").Component }>;

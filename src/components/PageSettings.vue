@@ -3,12 +3,14 @@
         <div class="flex items-center justify-between gap-2">
             <label class="text-sm font-medium text-gray-700">上边距：</label>
             <div class="flex flex-1 items-center gap-1">
-                <n-input-number
-                    v-model:value="localConfig.top"
+                <el-input-number
+                    v-model="localConfig.top"
                     :min="0"
                     :step="0.1"
-                    size="medium"
+                    size="default"
+                    controls-position="right"
                     class="flex-1"
+                    style="width: 100%"
                     v-wheel-change
                 />
                 <span class="text-sm text-gray-400">cm</span>
@@ -17,12 +19,14 @@
         <div class="flex items-center justify-between gap-2">
             <label class="text-sm font-medium text-gray-700">下边距：</label>
             <div class="flex flex-1 items-center gap-1">
-                <n-input-number
-                    v-model:value="localConfig.bottom"
+                <el-input-number
+                    v-model="localConfig.bottom"
                     :min="0"
                     :step="0.1"
-                    size="medium"
+                    size="default"
+                    controls-position="right"
                     class="flex-1"
+                    style="width: 100%"
                     v-wheel-change
                 />
                 <span class="text-sm text-gray-400">cm</span>
@@ -31,12 +35,14 @@
         <div class="flex items-center justify-between gap-2">
             <label class="text-sm font-medium text-gray-700">左边距：</label>
             <div class="flex flex-1 items-center gap-1">
-                <n-input-number
-                    v-model:value="localConfig.left"
+                <el-input-number
+                    v-model="localConfig.left"
                     :min="0"
                     :step="0.1"
-                    size="medium"
+                    size="default"
+                    controls-position="right"
                     class="flex-1"
+                    style="width: 100%"
                     v-wheel-change
                 />
                 <span class="text-sm text-gray-400">cm</span>
@@ -45,12 +51,14 @@
         <div class="flex items-center justify-between gap-2">
             <label class="text-sm font-medium text-gray-700">右边距：</label>
             <div class="flex flex-1 items-center gap-1">
-                <n-input-number
-                    v-model:value="localConfig.right"
+                <el-input-number
+                    v-model="localConfig.right"
                     :min="0"
                     :step="0.1"
-                    size="medium"
+                    size="default"
+                    controls-position="right"
                     class="flex-1"
+                    style="width: 100%"
                     v-wheel-change
                 />
                 <span class="text-sm text-gray-400">cm</span>

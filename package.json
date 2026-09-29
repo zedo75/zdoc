@@ -22,7 +22,7 @@
     "dependencies": {
         "axios": "^1.19.0",
         "core-js": "^3.50.0",
-        "naive-ui": "^2.45.0",
+        "element-plus": "^2.14.6",
         "radash": "^12.1.1",
         "vue": "^3.5.41",
         "vue-router": "catalog:",

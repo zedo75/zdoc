@@ -4,26 +4,28 @@
 
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">高度 (cm)</label>
-            <n-input-number
-                v-model:value="height"
+            <el-input-number
+                v-model="height"
                 :step="1"
+                controls-position="right"
                 placeholder="自动"
                 :min="0"
                 class="w-full"
-                clearable
+                style="width: 100%"
                 v-wheel-change
             />
         </div>
 
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">宽度 (cm)</label>
-            <n-input-number
-                v-model:value="width"
-                step="1"
+            <el-input-number
+                v-model="width"
+                :step="1"
+                controls-position="right"
                 placeholder="自动"
                 :min="0"
                 class="w-full"
-                clearable
+                style="width: 100%"
                 v-wheel-change
             />
         </div>
@@ -33,22 +35,23 @@
             宽、高均为 0 时表示重置原始大小
         </p>
 
-        <n-button type="primary" size="large" class="w-full my-3 shadow-lg" @click="handleResize">
+        <el-button type="primary" size="large" class="w-full my-3 shadow-lg" @click="handleResize">
             开始修改
-        </n-button>
+        </el-button>
     </div>
 </template>
 
 <script setup lang="ts">
+import { ElMessage } from "element-plus";
+
 import { batchResizeImages } from "@/jsa/commands/image";
 
-const message = useMessage();
 const height = ref(0);
 const width = ref(0);
 
 function handleResize() {
     const result = batchResizeImages(height.value, width.value);
-    message.info(result.message);
+    ElMessage.primary(result.message);
 }
 </script>
 
