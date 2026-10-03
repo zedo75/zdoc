@@ -2,29 +2,19 @@
     <div class="flex flex-col h-screen bg-gray-50">
         <el-scrollbar class="flex-1 min-h-0">
             <div class="p-5">
-                <div class="mb-6 text-center">
-                    <h1 class="text-xl font-semibold text-gray-800">公文设置</h1>
-                </div>
+                <h1 class="mb-6 text-center text-xl font-semibold text-gray-800">公文设置</h1>
 
                 <el-collapse v-model="activeNames" class="collapse-panel">
-                    <el-collapse-item name="page">
-                        <template #title>
-                            <span>📐 页面设置</span>
-                        </template>
-                        <PageSettings v-model="pageLayout" ref="pageRef" />
-                    </el-collapse-item>
-                    <el-collapse-item name="typography">
-                        <template #title>
-                            <span>📝 字体设置</span>
-                        </template>
-                        <TypographySettings v-model="typography" ref="typographyRef" />
-                    </el-collapse-item>
+                    <PageSection />
+                    <TypographySection />
+                    <HeaderSection />
+                    <FooterSection />
                 </el-collapse>
             </div>
         </el-scrollbar>
 
         <div class="flex flex-wrap gap-2 p-5 border-t border-gray-200 bg-white">
-            <el-button size="small" class="flex-1" @click="importConfig">载入配置</el-button>
+            <el-button size="small" class="flex-1" @click="loadConfig">载入配置</el-button>
             <el-button size="small" class="flex-1" @click="saveConfig">保存配置</el-button>
             <el-button size="small" type="primary" class="flex-1" @click="applyAll">
                 应用所有设置
@@ -35,53 +25,37 @@
 </template>
 
 <script setup lang="ts">
-import { ElMessage, ElNotification } from "element-plus";
+import { ElMessage } from "element-plus";
 
-import PageSettings from "@/components/PageSettings.vue";
-import TypographySettings from "@/components/TypographySettings.vue";
-import { getDefaultConfigFull } from "@/config/defaults";
-import { useGovDocConfig } from "@/stores/govDocConfig";
+import FooterSection from "@/components/FooterSection.vue";
+import HeaderSection from "@/components/HeaderSection.vue";
+import { useConfigFile } from "@/composables/useConfigFile";
+import { useFooterActions, useHeaderActions } from "@/composables/useHeaderActions";
+import { usePageActions } from "@/composables/usePageActions";
+import { useTypographyActions } from "@/composables/useTypographyActions";
 
-const typographyRef = ref<InstanceType<typeof TypographySettings> | null>(null);
-const pageRef = ref<InstanceType<typeof PageSettings> | null>(null);
+const activeNames = ref(["typography", "page", "header", "footer"]);
 
-const config = useGovDocConfig();
-const { pageLayout, typography, header, footer } = config;
+const { save: saveConfig, load: loadConfig } = useConfigFile();
 
-const activeNames = ref(["typography", "page"]);
+const page = usePageActions();
+const typo = useTypographyActions();
+const header = useHeaderActions();
+const footer = useFooterActions();
 
-function saveConfig() {
-    const result = config.saveToFile();
-    if (result.success) {
-        ElNotification.success({
-            title: "保存成功",
-            message: "文件路径：" + result.path,
-            duration: 3000,
-        });
-    } else {
-        ElMessage.error("保存失败，路径：" + result.path);
-    }
-}
-
-function importConfig() {
-    config.loadFromFile();
-    ElMessage.success("已从配置文件重新载入");
-}
-
-async function applyAll() {
-    pageRef.value?.applyMargins();
-    typographyRef.value?.applyStyle();
+function applyAll() {
+    page.apply();
+    typo.apply();
+    header.apply();
+    footer.apply();
     ElMessage.primary("所有设置已应用");
 }
 
 function resetAll() {
-    const def = getDefaultConfigFull();
-    pageLayout.value = def.pageLayout;
-    typography.value = def.typography;
-    header.value = def.header;
-    footer.value = def.footer;
+    page.reset();
+    typo.reset();
+    header.reset();
+    footer.reset();
     ElMessage.primary("已恢复默认设置");
 }
 </script>
-
-<style scoped></style>

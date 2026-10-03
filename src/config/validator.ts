@@ -21,6 +21,8 @@ const PageLayoutSchema = z
         bottom: z.number().min(0).default(DEFAULT_PAGE_LAYOUT_CONFIG.bottom),
         left: z.number().min(0).default(DEFAULT_PAGE_LAYOUT_CONFIG.left),
         right: z.number().min(0).default(DEFAULT_PAGE_LAYOUT_CONFIG.right),
+        header: z.number().min(0).default(DEFAULT_PAGE_LAYOUT_CONFIG.header),
+        footer: z.number().min(0).default(DEFAULT_PAGE_LAYOUT_CONFIG.footer),
     })
     .strip(); // strict(): 拒绝未知键（抛错）; strip()：删除未知键（静默忽略）
 
@@ -77,7 +79,6 @@ const HeaderSchema = z
         position: z.enum(["left", "center", "right"]).default(DEFAULT_HEADER_CONFIG.position),
         font: z.string().default(DEFAULT_HEADER_CONFIG.font),
         fontSize: z.number().positive().default(DEFAULT_HEADER_CONFIG.fontSize),
-        distance: z.number().nonnegative().default(DEFAULT_HEADER_CONFIG.distance),
     })
     .strip();
 
@@ -88,7 +89,6 @@ const FooterSchema = z
         position: z
             .enum(["left", "right", "middle", "inside", "outside"])
             .default(DEFAULT_FOOTER_CONFIG.position),
-        distance: z.number().nonnegative().default(DEFAULT_FOOTER_CONFIG.distance),
     })
     .strip();
 

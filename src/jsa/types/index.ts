@@ -38,6 +38,12 @@ export interface SimpleFontConfig {
  */
 export type TopicBoldMode = "auto" | "prefix" | "none";
 
+export const TOPIC_BOLD_MODE_OPTIONS = [
+    { value: "auto", label: "自动（短句整句加粗，长句仅前缀）" },
+    { value: "prefix", label: `仅前缀（如"一是"、"二是"）` },
+    { value: "none", label: "不加粗" },
+] as const satisfies readonly { label: string; value: TopicBoldMode }[];
+
 /**
  * 完整排版配置
  */
@@ -78,6 +84,10 @@ export interface PageLayoutConfig {
     left: number;
     /** 右边距（厘米） */
     right: number;
+    /** 页眉距纸张顶端距离（厘米） */
+    header: number;
+    /** 页脚距纸张底端距离（厘米） */
+    footer: number;
 }
 
 export type HeaderPosition = "left" | "center" | "right";
@@ -95,8 +105,6 @@ export interface HeaderConfig {
     font: string;
     /** 字体大小（单位：磅） */
     fontSize: number;
-    /** 页眉距纸张顶端距离（厘米） */
-    distance: number;
 }
 
 export type PagenumPosition = "left" | "middle" | "right" | "inside" | "outside";
@@ -112,8 +120,6 @@ export interface FooterConfig {
     fontSize: number;
     /** 页码在页脚中的位置 */
     position: PagenumPosition;
-    /** 页脚距纸张底端距离（厘米） */
-    distance: number;
 }
 
 /**

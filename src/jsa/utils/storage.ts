@@ -3,7 +3,6 @@ export const STORAGE_KEYS = {
     DOC_SETTINGS_ID: "official_taskpane_id",
     IMAGE_RESIZE_TASKPANE_ID: "image_resize_taskpane_id",
     TEXT_COMPARE_TASKPANE_ID: "text_compare_taskpane_id",
-    HEADER_FOOTER_TASKPANE_ID: "header_footer_taskpane_id",
     LAST_SELECTED_FOLDER: "LastSelectedFolder",
     TYPO: "typo",
     PAGE: "page",

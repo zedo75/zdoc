@@ -250,10 +250,6 @@ export function addFooterPagenum(config?: FooterConfig, doc: Wps.Document = Acti
     // 确保关闭“奇偶页不同”
     ActiveDocument.PageSetup.OddAndEvenPagesHeaderFooter = msoFalse;
 
-    if (finalConfig.distance !== undefined && finalConfig.distance >= 0) {
-        doc.PageSetup.FooterDistance = Application.CentimetersToPoints(finalConfig.distance);
-    }
-
     const existing = findPagenumShape(footer);
     const position = mapPosition(finalConfig.position);
 

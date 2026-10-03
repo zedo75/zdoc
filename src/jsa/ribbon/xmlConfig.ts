@@ -47,10 +47,6 @@ export const xmlConfig = RibbonBuilder.create({
                         getImage: "getImage",
                     }),
                 ]),
-                button("页眉页脚", "btnHeaderFooter", {
-                    imageMso: "HeaderFooter",
-                    size: "large",
-                }),
             ]),
             group("快捷样式", "grpStyle", [
                 splitButton("sbQuickStyle", { size: "large" }, [

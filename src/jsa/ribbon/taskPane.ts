@@ -6,7 +6,6 @@ const PANE_MAP: Record<string, string> = {
     [STORAGE_KEYS.DOC_SETTINGS_ID]: "settings",
     [STORAGE_KEYS.IMAGE_RESIZE_TASKPANE_ID]: "image-resize",
     [STORAGE_KEYS.TEXT_COMPARE_TASKPANE_ID]: "text-compare",
-    [STORAGE_KEYS.HEADER_FOOTER_TASKPANE_ID]: "header-footer",
 };
 
 const paneIdCache = new Map<string, number>();

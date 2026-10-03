@@ -11,7 +11,7 @@ import { attachmentListRegex, attachmentListWildcards } from "./govDoc";
  */
 export function setPageLayout(options: PageLayoutConfig, doc: Wps.Document = ActiveDocument) {
     const merged = Object.assign({}, DEFAULT_PAGE_LAYOUT_CONFIG, options);
-    const { top, bottom, left, right } = merged;
+    const { top, bottom, left, right, header, footer } = merged;
 
     const ps = doc.PageSetup; // 获取页面设置对象
     // 设置上下左右边距（厘米）
@@ -19,6 +19,9 @@ export function setPageLayout(options: PageLayoutConfig, doc: Wps.Document = Act
     ps.BottomMargin = Application.CentimetersToPoints(bottom);
     ps.LeftMargin = Application.CentimetersToPoints(left);
     ps.RightMargin = Application.CentimetersToPoints(right);
+    // 页眉页脚
+    ps.HeaderDistance = Application.CentimetersToPoints(header);
+    ps.FooterDistance = Application.CentimetersToPoints(footer);
 }
 
 /**

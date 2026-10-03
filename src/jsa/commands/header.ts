@@ -10,7 +10,6 @@ export function setHeader(
     position: string,
     fontName: string,
     fontSize: number,
-    distance?: number,
     doc: Wps.Document = ActiveDocument,
 ) {
     if (!doc) {
@@ -37,10 +36,6 @@ export function setHeader(
         align = wdAlignParagraphRight;
     }
     header.Range.ParagraphFormat.Alignment = align;
-
-    if (distance !== undefined && distance >= 0) {
-        doc.PageSetup.HeaderDistance = Application.CentimetersToPoints(distance);
-    }
 }
 
 /**

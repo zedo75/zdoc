@@ -12,6 +12,8 @@ export const DEFAULT_PAGE_LAYOUT_CONFIG: PageLayoutConfig = Object.freeze({
     left: 2.8,
     right: 2.6,
     bottom: 3.5,
+    header: 1.5,
+    footer: 2.4,
 });
 
 /**
@@ -52,7 +54,6 @@ export const DEFAULT_HEADER_CONFIG: HeaderConfig = Object.freeze({
     font: "黑体",
     fontSize: 16,
     position: "left",
-    distance: 1.5,
 });
 
 /** 默认页脚配置 */
@@ -60,7 +61,6 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = Object.freeze({
     font: "宋体",
     fontSize: 14,
     position: "outside",
-    distance: 2.4,
 });
 
 /**

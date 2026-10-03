@@ -76,7 +76,6 @@ const actionHandlers: Partial<Record<RibbonControlId, RibbonAction>> = {
         wpsAlert(msg);
     },
     btnRemoveShading: () => withUndoRecord(removeShadingBackground),
-    btnHeaderFooter: () => toggleTaskPane(STORAGE_KEYS.HEADER_FOOTER_TASKPANE_ID),
 
     // 快捷样式
     btnQuickStyle: () => {
