@@ -25,7 +25,6 @@
         "element-plus": "^2.14.6",
         "radash": "^12.1.1",
         "vue": "^3.5.41",
-        "vue-router": "catalog:",
         "zod": "^4.4.3"
     },
     "devDependencies": {

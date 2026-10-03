@@ -1,7 +1,7 @@
 /**
  * 获取当前页面的基础 URL（协议 + 域名 + 端口 + 路径目录）
  * 例如：http://127.0.0.1:3889/ 或 http://127.0.0.1:3889/subpath/
- * 也可能是 file:///.../kingsoft/wps/jsaddons/xxx_1.0.0/index.html#/subpath/
+ * 也可能是 file:///.../kingsoft/wps/jsaddons/xxx_1.0.0/
  */
 function getBaseUrl(): string {
     const { protocol, host, pathname } = window.location;
@@ -18,11 +18,12 @@ function getBaseUrl(): string {
 }
 
 /**
- * 生成 Vue Router (Hash 模式) 下的完整 URL
- * @param routePath - 路由路径，例如 'dialog' 或 '/dialog'
- * @returns 完整 URL，例如 'http://127.0.0.1:3889/#/dialog' 或 'file:///.../index.html#/dialog'
+ * 生成任务窗格页面的完整 URL（通过 query 参数指定页面）
+ * @param paneName - 页面名称（对应 src/views 下的文件名），例如 'settings'
+ * @returns 完整 URL，例如 'http://127.0.0.1:3889/?pane=settings'
+ *          或 'file:///.../index.html?pane=settings'
  */
-export function getRouterUrl(routePath: string) {
+export function getPaneUrl(paneName: string) {
     const base = getBaseUrl();
     // 确保 base 以 '/' 结尾
     let normalizedBase = base.endsWith("/") ? base : `${base}/`;
@@ -33,13 +34,9 @@ export function getRouterUrl(routePath: string) {
         // 检查 base 是否已经以 .html / .htm 结尾（防止重复添加）
         const hasHtmlFile = /\.html?$/i.test(normalizedBase);
         if (!hasHtmlFile) {
-            // 你可以修改这里的默认文件名，比如 "taskpane.html" 或 "index.html"
             normalizedBase = normalizedBase + "index.html";
         }
     }
 
-    // 清理路由路径：去掉开头的 '/'
-    const cleanPath = routePath.replace(/^\/+/, "");
-    // 拼接标准 Hash 格式
-    return `${normalizedBase}#/${cleanPath}`;
+    return `${normalizedBase}?pane=${encodeURIComponent(paneName)}`;
 }

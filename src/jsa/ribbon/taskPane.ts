@@ -1,13 +1,12 @@
-import type { RouteNamedMap } from "vue-router/auto-routes";
-
 import { getItem, removeItem, setItem, STORAGE_KEYS } from "@/jsa/utils/storage";
-import { getRouterUrl } from "@/utils/router";
+import { getPaneUrl } from "@/utils/url";
 
-const ROUTE_MAP: Record<string, keyof RouteNamedMap> = {
-    [STORAGE_KEYS.DOC_SETTINGS_ID]: "/settings",
-    [STORAGE_KEYS.IMAGE_RESIZE_TASKPANE_ID]: "/image-resize",
-    [STORAGE_KEYS.TEXT_COMPARE_TASKPANE_ID]: "/text-compare",
-    [STORAGE_KEYS.HEADER_FOOTER_TASKPANE_ID]: "/header-footer",
+// 窗格标识 → src/views 下的页面名（URL 的 ?pane= 参数）
+const PANE_MAP: Record<string, string> = {
+    [STORAGE_KEYS.DOC_SETTINGS_ID]: "settings",
+    [STORAGE_KEYS.IMAGE_RESIZE_TASKPANE_ID]: "image-resize",
+    [STORAGE_KEYS.TEXT_COMPARE_TASKPANE_ID]: "text-compare",
+    [STORAGE_KEYS.HEADER_FOOTER_TASKPANE_ID]: "header-footer",
 };
 
 const paneIdCache = new Map<string, number>();
@@ -24,7 +23,7 @@ function getPaneId(key: string): number | null {
 }
 
 function hideAllOtherPanes(exclude: string): void {
-    for (const key of Object.keys(ROUTE_MAP)) {
+    for (const key of Object.keys(PANE_MAP)) {
         if (key === exclude) continue;
         const paneId = getPaneId(key);
         if (!paneId) continue;
@@ -49,12 +48,12 @@ export function showTaskPane(key: string): void {
             paneIdCache.delete(key);
             removeItem(key);
         }
-        const routePath = ROUTE_MAP[key];
-        if (!routePath) {
-            console.error(`找不到路由路径: ${key}`);
+        const paneName = PANE_MAP[key];
+        if (!paneName) {
+            console.error(`找不到窗格页面: ${key}`);
             return;
         }
-        const url = getRouterUrl(routePath);
+        const url = getPaneUrl(paneName);
         taskPane = Application.CreateTaskPane(url);
         // 介于 1/3 和 1/4 之间的屏幕宽度
         const width = Application.System.HorizontalResolution * 0.28 * window.devicePixelRatio;

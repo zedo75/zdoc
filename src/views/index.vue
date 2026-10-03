@@ -1,26 +1,32 @@
 <template>
     <div class="max-w-[600px] mx-auto p-5">
         <h2 class="text-xl font-bold mb-4">全部页面</h2>
-        <el-menu router class="border-none">
-            <el-menu-item v-for="route in visibleRoutes" :key="route.path" :index="route.path">
-                {{ String(route.name) || route.path }}
+        <el-menu class="border-none">
+            <el-menu-item
+                v-for="item in menuItems"
+                :index="item.title"
+                :key="item.pane"
+                @click="openPane(item.pane)"
+            >
+                {{ item.title }}
             </el-menu-item>
         </el-menu>
     </div>
 </template>
 
 <script setup lang="ts">
-const router = useRouter();
+const menuItems = [
+    { title: "公文设置", pane: "settings" },
+    { title: "页眉页脚", pane: "header-footer" },
+    { title: "图片调整", pane: "image-resize" },
+    { title: "文本对比", pane: "text-compare" },
+];
 
-const visibleRoutes = computed(() => {
-    return router.getRoutes().filter((route) => {
-        if (route.redirect) return false;
-        if (route.path.includes("*")) return false;
-        if (route.path.includes(":")) return false;
-        if (route.meta?.hidden) return false;
-        return true;
-    });
-});
+function openPane(pane: string) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("pane", pane);
+    window.location.href = url.toString();
+}
 </script>
 
 <style></style>

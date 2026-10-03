@@ -9,9 +9,6 @@ wps-addon-*
 auto-imports.d.ts
 components.d.ts
 
-# vue router 自动生成的类型声明文件
-typed-router.d.ts
-
 # vite-plugin-wps-enhance 生成的文件
 
 public/ribbon.xml

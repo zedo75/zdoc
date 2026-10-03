@@ -10,7 +10,6 @@ allowBuilds:
 # 定义版本目录，供工作区中的多个包共享依赖版本
 catalog:
     vite: ^8.2.1
-    vue-router: ^5.2.0
 
 # 关掉新包发布时间检查
 minimumReleaseAge: 0

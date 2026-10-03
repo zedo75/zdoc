@@ -35,6 +35,14 @@ interface RibbonAction {
     (): void;
 }
 
+function initConfig(): void {
+    try {
+        useGovDocConfig().loadFromFile();
+    } catch (e) {
+        console.warn("加载配置失败（非 WPS 环境？）:", e);
+    }
+}
+
 function getTypoConfig() {
     const config = useGovDocConfig();
     return config.typography.value;
@@ -200,4 +208,6 @@ export function setupRibbonBindings(): void {
         // @ts-ignore
         window[key] = value;
     });
+
+    initConfig();
 }
