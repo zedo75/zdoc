@@ -1,4 +1,4 @@
-import type { GovDocConfig } from "../types";
+import type { GovDocConfig } from "@/jsa/types";
 
 /**
  * 返回默认配置文件的完整路径。

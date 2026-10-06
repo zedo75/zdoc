@@ -1,4 +1,4 @@
-import { getItem, setItem, STORAGE_KEYS } from "./storage";
+import { getItem, setItem, STORAGE_KEYS } from "@/jsa/utils/storage";
 
 /**
  * 正则查找处理
