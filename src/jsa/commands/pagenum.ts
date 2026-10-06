@@ -39,7 +39,8 @@ function configureShape(shape: Wps.Shape, position: number): void {
  * @param textRange - 文本框的 TextRange 对象，用于插入内容。
  */
 function insertPageNumber(textRange: Wps.Range, font?: string, fontSize?: number): void {
-    const template = "— X —";
+    // 一字线左右各空一字，这里用 1em 宽空格占位
+    const template = "\u2003— X —\u2003";
     textRange.Text = template;
     // 设置字体样式：宋体、14磅
     textRange.Font.Name = font || "宋体";
