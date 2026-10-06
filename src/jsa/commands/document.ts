@@ -1,9 +1,7 @@
 import type { PageLayoutConfig } from "@/jsa/types";
 
 import { DEFAULT_PAGE_LAYOUT_CONFIG } from "@/config/defaults";
-import { handleAttachments } from "@/utils/typo";
-
-import { attachmentListRegex, attachmentListWildcards } from "./govDoc";
+import { ATTACHMENT_LIST_REGEX, ATTACHMENT_LIST_WILDCARDS, handleAttachments } from "@/utils/typo";
 
 /**
  * 设置当前文档的页面布局
@@ -44,7 +42,9 @@ export function deleteNonBuiltInStyles(doc: Wps.Document = ActiveDocument) {
 }
 
 /**
- * 清除范围或全文的底纹背景（常见白色背景）
+ * 清除底纹背景
+ *
+ * 清除所选范围的底纹背景，若不选中段落则影响全文（常见白色背景）
  */
 export function removeShadingBackground() {
     const sel = Application.Selection;
@@ -155,7 +155,7 @@ export function getAttachmentsRangesIndex(doc: Wps.Document = ActiveDocument): R
     const find = rng.Find;
     find.ClearFormatting();
     // 对应正则表达式 attachmentList
-    find.Text = attachmentListWildcards; // 这里只找“附件”开头到结尾，^p 只用于定位
+    find.Text = ATTACHMENT_LIST_WILDCARDS; // 这里只找“附件”开头到结尾，^p 只用于定位
     find.MatchCase = false; // 不区分大小写
     find.MatchWildcards = true; // 使用通配符
 
@@ -189,7 +189,7 @@ export function getAttachmentsRangeIndex(doc: Wps.Document = ActiveDocument): Ra
     const ranges: RangeIndex[] = [];
     if (!doc.Content.Text.includes("附件")) return ranges;
     // 要求附件说明之后必须有 1 个空段落
-    const regex = attachmentListRegex;
+    const regex = ATTACHMENT_LIST_REGEX;
     // 判断选区是否有效（有选中文本，且不是插入点）
     const hasSelection = selection.Type !== wdSelectionIP;
 
@@ -219,42 +219,65 @@ export function getAttachmentsRangeIndex(doc: Wps.Document = ActiveDocument): Ra
 }
 
 /**
+ * 对齐附件列表
+ *
  * 格式化公文中的“附件说明”
  * @param doc 文档
  */
 export function formatAttachments(doc: Wps.Document = ActiveDocument) {
-    const index1 = getAttachmentsRangesIndex();
-    for (let i = index1.length - 1; i >= 0; i--) {
-        const item = index1[i];
+    const rangeIndex = getAttachmentsRangesIndex();
+    for (let i = rangeIndex.length - 1; i >= 0; i--) {
+        const item = rangeIndex[i];
         const result = handleAttachments(item.text);
         const range = doc.Range(item.startIndex, item.endIndex);
-        range.Text = result;
-    }
-    // 去掉空格开头并转为缩进
-    // 因为涉及字符删除，需要逆序遍历
-    const index2 = getAttachmentsRangesIndex();
-    for (let i = index2.length - 1; i >= 0; i--) {
-        const item = index2[i];
-        const paras = doc.Range(item.startIndex, item.endIndex).Paragraphs;
-        const paraCount = paras.Count;
-        for (let j = 1; j <= paraCount; j++) {
-            const para = paras.Item(j);
-            const rng = para.Range;
-            const text = rng.Text;
-            // 匹配开头全角和半角空格
-            const match = text.match(/^\u3000+/);
-            if (!match) continue;
-
-            const spaces = match[0];
-            const spaceCount = (spaces.match(/\u3000/g) || []).length; // 全角空格数
-
-            let delRng = rng.Duplicate;
-            delRng.End = delRng.Start + spaceCount;
-            delRng.Delete();
-
-            para.Format.CharacterUnitFirstLineIndent = spaceCount;
-            para.Format.FirstLineIndent = 0;
-            // 这里让用户手动把空格转缩进
+        // handleAttachments 是幂等性的，因此只需要额外判断缩进是否满足条件
+        if (item.text == result.replace(/\n/g, "\r").replace(/\u3000/g, "")) {
+            const paras = range.Paragraphs;
+            let shouldSkip = false;
+            // 段落数≥2 且 第二段缩进<5 时才执行排版，否则跳过（不逐段检查缩进）
+            if (paras.Count < 2 || paras.Item(2).Format.CharacterUnitFirstLineIndent >= 5) {
+                shouldSkip = true;
+            }
+            if (shouldSkip) {
+                continue;
+            }
+            // 缩进不对，继续走排版流程
         }
+
+        range.Text = result;
+        // 对该块进行缩进转换
+        convertIndentForRange(range);
+    }
+}
+
+/**
+ * 对指定Range内的所有段落进行缩进转换（将行首全角空格转为段落缩进）
+ */
+function convertIndentForRange(range: Wps.Range) {
+    const doc = range.Parent as Wps.Document;
+    const paras = range.Paragraphs;
+    const count = paras.Count;
+    // 使用 For Each 遍历，比索引快，但 JS/TS 加载项不支持
+    for (let j = 1; j <= count; j++) {
+        const para = paras.Item(j);
+        const rng = para.Range;
+        const text = rng.Text;
+        // 只检查前几个字符，不用正则
+        if (!text.startsWith("\u3000")) continue;
+
+        // 统计连续全角空格数
+        let spaceCount = 0;
+        while (spaceCount < text.length && text[spaceCount] === "\u3000") {
+            spaceCount++;
+        }
+
+        // 删除这些空格
+        if (spaceCount > 0) {
+            const delRange = doc.Range(rng.Start, rng.Start + spaceCount);
+            delRange.Delete();
+        }
+
+        // 设置段落缩进（全角空格数作为缩进字符数）
+        para.Format.CharacterUnitFirstLineIndent = spaceCount;
     }
 }

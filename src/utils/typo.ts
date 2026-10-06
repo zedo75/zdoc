@@ -1,3 +1,35 @@
+// 注意：同段内有多个需要匹配的才加 g 标志
+export const SALUTATION_REGEX = /^[^《》〔〕：]*：\r$/; // 抬头；发文事由可能包含转发上级的文件（书名号、六角括号）
+export const H1_REGEX = /^[一二三四五六七八九十]+、.*?(?:。|[^；;]\r)/; // 以分号结尾视为列表而不是层级标题
+export const H2_REGEX = /^（[一二三四五六七八九十]+）.*?(?:。|[^；;]\r)/;
+/**
+ * 匹配三级标题正则表达式
+ * - `(?!.*：)` 为先行断言，见以下链接
+ * - `23` 为一行能容纳的字数：28 - 2（首缩）- 2（"00." 占宽）- 1（考虑标点压缩）
+ * - 一二级标题暂不考虑限制 23 字，因为有的材料中会超过一行
+ * @see https://mdn.org.cn/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Lookahead_assertion
+ */
+export const H3_REGEX = /^(?!.*(?:：|\u2005))[0-9]{1,2}\..{1,23}?(?:。|[^；;]\r)/;
+export const TOPIC_REGEX = /(?<=^|[。？！])[一二三四五六七八九十][是要].*?。/g; // 小标题
+export const TOPIC_PREFIX_REGEX = /^[一二三四五六七八九十][是要]/;
+export const DATE_REGEX = /^[0-9X]{4}年[0-9 X]{1,2}月[0-9 X]{1,2}日\s*\r/; // 落款日期
+
+// 标题中禁止出现的符号
+export const FORBIDDEN_SYMBOLS_REGEX = /[。；！？【】〖〗_=|{}<>#&~$^*※\[\]\\]/;
+export const ATTACHMENT_WILDCARDS = "^m附件[0-9]{1,}^p"; // 附件通配符
+export const ATTACHMENT_LIST_REGEX = /[ \u3000]*附件[：:]\s*([\s\S]+?)(?=[\r\n]{2}|\f|$)/g;
+export const ATTACHMENT_LIST_WILDCARDS = "附件[:：]*^p^p";
+
+// 抬头相关正则
+export const SALUTATION_EXCLUDE_REGEX = /贯彻|落实|关于|根据|如下|以下|下列|包括|。/; // 抬头黑名单
+export const SALUTATION_ORG_DEPT_REGEX =
+    /省|自治区|市|县|乡|镇|村|社区|委.*?(?:部|办)|局|工会|妇联|企业|党组织|大学/; // 抬头白名单
+export const SALUTATION_EACH_UNIT_REGEX = /各.*?(?:单位|部门)/;
+export const SALUTATION_GREETING_REGEX = /尊敬的|敬爱的|亲爱的|同志们/; // 敬语、称呼
+export const SALUTATION_JOB_TITLE_REGEX = /副?书记|副?主任|副?参谋长|副?政委/; // 职务名称
+
+export const SIGNATURE_DATE_REGEX = /^[0-9X]{4}年[0-9 X]{1,2}月[0-9 X]{1,2}日\s*\r?$/;
+
 /**
  * 将厘米转换为磅（WPS 默认单位）
  * @param cm 厘米数
@@ -96,15 +128,16 @@ export function handleAttachments(content: string) {
     return output;
 }
 
-// ==================== 1. 中间层类型定义 ====================
-export interface ParaInfo {
+// ==================== 基础段落信息（纯文本分析） ====================
+export interface BaseParaInfo {
     text: string;
     isEmpty: boolean;
     isAttachment: boolean; // 段落开头为“附件X”
     hasFormFeed: boolean; // 包含换页符 \f
     hasForbidden: boolean; // 包含禁止符号
-    isHeading: boolean; // 已被识别为层级标题（h1/h2/h3/topic）
+    isHeading: boolean; // 已被识别为层级标题（h1/h2/h3/topic） 由分析阶段计算
     isInRange: boolean; // 是否在排版范围内
+    isTable: boolean; // 段落含 \x07（Word 表格单元格标记）
 }
 
 /**
@@ -114,15 +147,16 @@ export interface ParaInfo {
  * - 块后必须跟空行（或文档末尾，此处强制必须）
  * - 附件段落自身不会被选为候选，也不会被包含在块内
  */
-export function findMainTitleBlocks(paraInfos: ParaInfo[]): [number, number][] {
+export function findMainTitleBlocks(paraInfos: BaseParaInfo[]): [number, number][] {
     const n = paraInfos.length;
     const blocks: [number, number][] = [];
     const candidates = new Set<number>();
 
-    // ----- 1. 文档第一个非空段落（排除附件、换页符、禁止符）-----
+    // 文档第一个非空段落（排除附件、换页符、禁止符）
     const firstNonEmpty = paraInfos.findIndex((p) => !p.isEmpty);
     if (
         firstNonEmpty !== -1 &&
+        !paraInfos[firstNonEmpty].isTable &&
         !paraInfos[firstNonEmpty].isAttachment &&
         !paraInfos[firstNonEmpty].hasFormFeed &&
         !paraInfos[firstNonEmpty].hasForbidden &&
@@ -131,46 +165,45 @@ export function findMainTitleBlocks(paraInfos: ParaInfo[]): [number, number][] {
         candidates.add(firstNonEmpty);
     }
 
-    // ----- 2. 附件后第一个非空段落（跳过中间空行）-----
+    // 判断该索引位置的段落能否作为主标题块的候选起点
+    const isEligibleBlockStart = (idx: number) =>
+        idx < n &&
+        !paraInfos[idx].isTable &&
+        !paraInfos[idx].isAttachment &&
+        !paraInfos[idx].hasForbidden &&
+        paraInfos[idx].isInRange;
+
+    // 附件后第一个非空段落（跳过中间空行）
     paraInfos.forEach((p, idx) => {
         if (p.isAttachment) {
             let next = idx + 1;
             while (next < n && paraInfos[next].isEmpty) next++;
-            if (
-                next < n &&
-                !paraInfos[next].isAttachment &&
-                !paraInfos[next].hasForbidden &&
-                paraInfos[next].isInRange
-            ) {
+            if (isEligibleBlockStart(next)) {
                 candidates.add(next);
             }
         }
     });
 
-    // ----- 3. 换页符后第一个非空段落（跳过中间空行，排除附件自身）-----
+    // 换页符后第一个非空段落（跳过中间空行，排除附件自身）
     paraInfos.forEach((p, idx) => {
         if (p.hasFormFeed) {
             let next = idx + 1;
             while (next < n && paraInfos[next].isEmpty) next++;
-            if (
-                next < n &&
-                !paraInfos[next].isAttachment &&
-                !paraInfos[next].hasForbidden &&
-                paraInfos[next].isInRange
-            ) {
+            if (isEligibleBlockStart(next)) {
                 candidates.add(next);
             }
         }
     });
 
-    // ----- 4. 抬头上方可扩展（暂略）-----
+    // 抬头上方可扩展（暂略）-----
 
-    // ----- 从候选生成块 -----
+    // 从候选生成块
     const sorted = Array.from(candidates).sort((a, b) => a - b);
     for (const start of sorted) {
         if (blocks.some(([s, e]) => start >= s && start <= e)) continue;
 
         const info = paraInfos[start];
+        if (info.isTable) continue;
         if (info.isEmpty || info.hasForbidden || info.isHeading) continue;
 
         // 若前一个非空段落是层级标题，则相邻时不作为标题
@@ -189,6 +222,7 @@ export function findMainTitleBlocks(paraInfos: ParaInfo[]): [number, number][] {
                 break;
             }
             if (cur.isAttachment) break; // 附件本身不应包含在标题块内
+            if (cur.isTable) break; // 表格切断主标题块
             if (!cur.isInRange) break;
             end++;
         }
