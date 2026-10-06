@@ -28,10 +28,12 @@
         "zod": "^4.4.3"
     },
     "devDependencies": {
+        "@element-plus/icons-vue": "^2.3.2",
         "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
         "@types/node": "^25.9.5",
         "@vitejs/plugin-legacy": "^8.2.3",
         "@vitejs/plugin-vue": "^6.0.8",
+        "@vueuse/components": "^15.0.0",
         "@vueuse/core": "^14.4.0",
         "autoprefixer": "^10.5.4",
         "chinese-number-format": "^2.0.3",

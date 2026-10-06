@@ -119,6 +119,10 @@ const actionHandlers: Partial<Record<RibbonControlId, RibbonAction>> = {
     btnTextViewCompare: () => toggleTaskPane(STORAGE_KEYS.TEXT_COMPARE_TASKPANE_ID),
 
     btnNumberToStatic: convertNumberingToStatic,
+    btnMailMergeDialog: () => {
+        const url = window.location.origin + window.location.pathname + "?dialog=mail-merge-field";
+        Application.ShowDialog(url, "插入合并域", 360, 320, false);
+    },
     btnViewMailSource: viewMailSourceInfo,
     btnUpdateFiled: () => {
         const doc = ActiveDocument;

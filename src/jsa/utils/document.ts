@@ -118,3 +118,14 @@ export function refreshDocumentView(): void {
         /* 确保函数静默失败，不影响主流程运行 */
     }
 }
+
+/**
+ * 通过切换“显示合并数据”的视图模式来刷新邮件合并域显示的值
+ *
+ * 只能刷新文档编辑区，无法刷新 RibbonUI 中当前记录的序号
+ */
+export function refreshMailMergeDataView(): void {
+    ActiveDocument.ActiveWindow.View.MailMergeDataView = false;
+    refreshDocumentView();
+    ActiveDocument.ActiveWindow.View.MailMergeDataView = true;
+}

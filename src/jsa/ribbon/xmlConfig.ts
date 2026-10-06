@@ -120,9 +120,14 @@ export const xmlConfig = RibbonBuilder.create({
                     getImage: "getImage",
                 }),
                 separator(),
-                menu("邮件合并", "mnuMailMerge", { imageMso: "OpenDataSource" }, [
-                    button("查看数据源信息", "btnViewMailSource", { imageMso: "OpenDataSource" }),
-                    button("更新所有域", "btnUpdateFiled", { imageMso: "UpdateField" }),
+                splitButton("sb邮件合并", {}, [
+                    button("邮件合并", "btnMailMergeDialog", { imageMso: "OpenDataSource" }),
+                    menu("邮件合并", "mnuMailMerge", [
+                        button("查看数据源信息", "btnViewMailSource", {
+                            imageMso: "OpenDataSource",
+                        }),
+                        button("更新所有域", "btnUpdateFiled", { imageMso: "UpdateField" }),
+                    ]),
                 ]),
                 button("清除空段落", "btnClearEmptyPara", { imageMso: "DeleteBlankParagraph" }),
                 button("正则替换", "btnRegexReplace", { imageMso: "Replace" }),
