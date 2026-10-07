@@ -156,10 +156,23 @@ function processMultiLineTitle(doc: Wps.Document = ActiveDocument) {
 }
 
 /**
+ * 1 个中文字符 ≈ 2 个半角空格宽度
+ */
+const HALF_WIDTH_PER_CJK = 2;
+
+/**
+ * 中西文混排紧排修正
+ *
+ * 年/月/日 前后共 5 处间距，中西文之间的间距约为 1/2 半角空格
+ */
+const CJK_LATIN_ADJUST = 5 / 2;
+
+/**
  * 落款：署名（发文机关）、成文日期
  * @param doc 目标文档，默认为当前活动文档
+ * @param chars 落款右侧留空字数（中文字符数）。加盖印章的公文：4（默认）；不加盖印章的公文：2。
  */
-function formatSignature(doc: Wps.Document = ActiveDocument) {
+function formatSignature(doc: Wps.Document = ActiveDocument, chars = 4) {
     let datePara = null,
         unitPara = null;
 
@@ -183,27 +196,27 @@ function formatSignature(doc: Wps.Document = ActiveDocument) {
     const eqLen = (s: string) =>
         [...s].reduce((sum, cur) => sum + (/[\u0000-\u00ff]/.test(cur) ? 1 : 2), 0);
 
-    const processPara = (para: Wps.Paragraph, text: string) => {
-        if (!para || para.Range.Text.trim().length < 1) return;
-        para.Range.Text = text;
+    const processPara = (para: Wps.Paragraph | null, padSpaces: number) => {
+        if (!para) return;
+
+        const rng = para.Range;
+        rng.MoveEnd(wdCharacter, -1); // 排除段落标记
+        const text = rng.Text.trim();
+        if (!text) return;
+        rng.Text = text + " ".repeat(padSpaces);
+
         para.Alignment = wdAlignParagraphRight; // 右对齐
-        para.WordWrap = 0; // 避免段落末尾空格不占空间
+        para.WordWrap = 0; // 避免段落末尾空格悬挂在页边距外（不占实际空间）
     };
 
-    const unitLen = eqLen(unitText);
-    const dateLen = eqLen(dateText);
-
-    const diff = Math.round(dateLen / 2 + 4 * 2 + 5 / 4 - unitLen / 2);
-    if (diff >= 0) {
-        unitText = unitText + " ".repeat(diff) + "\r";
-        dateText = dateText + " ".repeat(8) + "\r";
-    } else {
-        unitText = unitText + "\r";
-        dateText = dateText + " ".repeat(8 - diff) + "\r";
-    }
-    processPara(unitPara, unitText);
-    datePara = unitPara.Next(1); // 更新引用，因为手动添加了 "\r" 导致原引用失效
-    processPara(datePara, dateText);
+    // 右空边距，统一以半角空格为单位
+    const rightMargin = chars * HALF_WIDTH_PER_CJK;
+    // diff 是落款单位右侧需要补齐的半角空格个数，计算思路是两行落款的“线段中点”与版芯右边的距离相等
+    const diff = Math.round(
+        (eqLen(dateText) + CJK_LATIN_ADJUST) / 2 + rightMargin - eqLen(unitText) / 2,
+    );
+    processPara(unitPara, Math.max(diff, 0));
+    processPara(datePara, rightMargin + Math.max(-diff, 0));
 }
 
 /**
