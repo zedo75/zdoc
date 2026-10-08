@@ -1,10 +1,8 @@
 <template>
-    <div
-        class="bg-gray-50 border border-gray-200 rounded-lg p-4 min-h-[120px] font-sans leading-relaxed"
-    >
+    <div>
         <div
             v-if="diffHtml"
-            class="diff-result whitespace-pre-wrap break-words bg-white p-4 rounded-md border border-gray-200"
+            class="diff-result p-4 whitespace-pre-wrap rounded-md border text-sm"
             v-html="diffHtml"
         ></div>
         <div v-else class="text-gray-400 text-center py-10">输入文本后自动显示差异</div>
@@ -12,6 +10,7 @@
 </template>
 
 <script setup lang="ts">
+import { useDebounceFn } from "@vueuse/core";
 import {
     diff,
     diffCleanupEfficiency,
@@ -61,30 +60,39 @@ function computeDiff() {
     emit("update:duration", endTime - startTime);
 }
 
+// 文本及对比模式变更：立即计算
 watch(
-    () => [props.oldText, props.newText, props.cleanupMode, props.editCost],
+    () => [props.oldText, props.newText, props.cleanupMode],
     () => computeDiff(),
     { immediate: true },
 );
 
-onMounted(computeDiff);
+const DEBOUNCE_DELAY = 300; // 防抖延迟
+
+const debouncedDiff = useDebounceFn(computeDiff, DEBOUNCE_DELAY);
+
+// editCost 变更时防抖：滚轮/长按会连续触发
+watch(
+    () => [props.editCost],
+    () => debouncedDiff(),
+);
+
+onBeforeUnmount(() => {
+    debouncedDiff.cancel();
+});
 </script>
 
 <style>
 /* 全局样式，覆盖 diff_prettyHtml 生成的标签 */
 .diff-result del {
-    background-color: #fde8e8;
     color: #b91c1c;
     text-decoration: line-through;
-    border-radius: 2px;
     padding: 0 2px;
 }
 
 .diff-result ins {
-    background-color: #e6f7e6;
     color: #0b7e3d;
     text-decoration: none;
-    border-radius: 2px;
     padding: 0 2px;
 }
 </style>
