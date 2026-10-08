@@ -1,10 +1,12 @@
+import type { ViewMode } from "@/jsa/commands/mergeMail";
+
 import { computed, ref } from "vue";
 
 import {
     getFieldShading,
     getViewMode,
     setFieldShading,
-    toggleViewMode,
+    setViewMode,
 } from "@/jsa/commands/mergeMail";
 
 /** 对外暴露的底纹状态字符串 */
@@ -23,44 +25,46 @@ const SHADING_MAP: Record<ShadingState, Wps.WdFieldShading> = {
  * 对外只暴露字符串状态，WPS 枚举映射封在内部。
  */
 export function useMergeFieldDisplay() {
+    // 内部缓存 —— WPS 是唯一真源，这里只是它在 Vue 的镜像
     /** 0 = 显示值；1 = 显示域 */
-    const viewMode = ref<0 | 1>(0);
-
+    const viewModeSource = ref<ViewMode>(0);
     /** 当前域底纹状态（WPS 枚举） */
-    const fieldShading = ref<Wps.WdFieldShading>(wdFieldShadingNever);
+    const shadingSource = ref<Wps.WdFieldShading>(wdFieldShadingNever);
 
-    /** 派生给模板用的字符串状态 */
+    /** 对外派生 —— 模板只读 */
+    const viewMode = computed(() => viewModeSource.value);
     const shadingState = computed<ShadingState>(() => {
-        if (fieldShading.value === wdFieldShadingAlways) return "always";
-        if (fieldShading.value === wdFieldShadingWhenSelected) return "selected";
+        if (shadingSource.value === wdFieldShadingAlways) return "always";
+        if (shadingSource.value === wdFieldShadingWhenSelected) return "selected";
         return "never";
     });
 
-    /** 从 WPS 读最新状态，同步到本地 ref */
-    function refreshDisplayState() {
-        viewMode.value = getViewMode();
-        fieldShading.value = getFieldShading();
+    /** UI → 文档：设为目标值 */
+    function applyViewMode(next: ViewMode) {
+        if (viewModeSource.value === next) return;
+        setViewMode(next);
+        viewModeSource.value = getViewMode();
     }
 
-    /** 切换“显示值 / 显示域” */
-    function toggleView() {
-        toggleViewMode();
-        viewMode.value = getViewMode();
-    }
-
-    /** 模板只传字符串，映射在这里完成 */
-    function setShading(state: ShadingState) {
+    /** UI → 文档：设为目标值 */
+    function applyShading(state: ShadingState) {
         const mode = SHADING_MAP[state];
-        if (fieldShading.value === mode) return;
-        fieldShading.value = mode;
+        if (shadingSource.value === mode) return;
         setFieldShading(mode);
+        shadingSource.value = getFieldShading();
+    }
+
+    /** 文档 → Vue：只写 raw */
+    function refreshDisplayState() {
+        viewModeSource.value = getViewMode();
+        shadingSource.value = getFieldShading();
     }
 
     return {
         viewMode,
         shadingState,
+        applyViewMode,
+        applyShading,
         refreshDisplayState,
-        toggleView,
-        setShading,
     };
 }

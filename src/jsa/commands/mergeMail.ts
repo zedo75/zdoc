@@ -130,9 +130,17 @@ export function insertNextField(range: Wps.Range): void {
     range.Fields.Add(range, wdFieldNext, "", false);
 }
 
+/** 视图模式：0 = 显示值；1 = 显示域 */
+export type ViewMode = 0 | 1;
+
 /** 读取当前"域代码/值"显示模式：0 = 显示值，1 = 显示域代码 */
-export function getViewMode(): 0 | 1 {
+export function getViewMode(): ViewMode {
     return Application.ActiveDocument.MailMerge.ViewMailMergeFieldCodes ? 1 : 0;
+}
+
+/** 设置"域代码/值"显示模式：0 = 显示值，1 = 显示域代码 */
+export function setViewMode(mode: ViewMode) {
+    Application.ActiveDocument.MailMerge.ViewMailMergeFieldCodes = mode;
 }
 
 /** 切换"域代码/值"显示模式 */

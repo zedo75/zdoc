@@ -1,72 +1,32 @@
 <template>
     <div
         class="flex flex-col h-screen bg-gradient-to-b from-gray-50 to-gray-100/60"
-        v-element-hover="refreshRecordState"
+        v-element-hover="refreshAllFromDocument"
     >
         <!-- ========== 顶部工具栏 ========== -->
         <div class="bg-white border-b border-gray-200/80 shadow-sm">
             <!-- 第一行：视图模式 + 底纹模式（两个独立分段控件） -->
-            <div class="flex items-center gap-2 px-3 pt-3 flex-wrap">
-                <!-- 左：视图模式（两态） -->
-                <div class="flex items-center gap-0.5 p-1 rounded-xl bg-gray-100/80">
-                    <button
-                        type="button"
-                        class="flex items-center gap-1 h-7 px-3 rounded-lg text-xs font-medium transition-all duration-200"
-                        :class="
-                            viewMode === 0
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
-                        "
-                        @click="viewMode !== 0 && toggleView()"
-                    >
-                        <el-icon :size="14"><View /></el-icon>
-                        显示值
-                    </button>
-                    <button
-                        type="button"
-                        class="flex items-center gap-1 h-7 px-3 rounded-lg text-xs font-medium transition-all duration-200"
-                        :class="
-                            viewMode === 1
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
-                        "
-                        @click="viewMode !== 1 && toggleView()"
-                    >
-                        <el-icon :size="14"><Document /></el-icon>
-                        显示域
-                    </button>
-                </div>
+            <div class="flex justify-start gap-2 px-3 pt-3 flex-wrap">
+                <el-segmented
+                    :model-value="viewMode"
+                    @change="applyViewMode"
+                    size="small"
+                    :options="[
+                        { label: '显示值', value: 0 },
+                        { label: '显示域', value: 1 },
+                    ]"
+                />
 
-                <!-- 右：底纹三态（无 / 选中 / 始终） -->
-                <div class="flex items-center gap-1.5 ml-auto shrink-0">
-                    <span class="text-[11px] text-gray-400 select-none">底纹</span>
-                    <div class="flex items-center gap-0.5 p-1 rounded-xl bg-gray-100/80">
-                        <el-tooltip
-                            v-for="opt in [
-                                { key: 'never', label: '无', tip: '不显示域底纹' },
-                                { key: 'selected', label: '选中', tip: '选中时显示域底纹' },
-                                { key: 'always', label: '始终', tip: '始终显示域底纹' },
-                            ]"
-                            :key="opt.key"
-                            :content="opt.tip"
-                            placement="bottom"
-                            :show-after="400"
-                        >
-                            <button
-                                type="button"
-                                class="flex items-center justify-center h-7 px-2.5 rounded-lg text-xs font-medium transition-all duration-200"
-                                :class="
-                                    shadingState === opt.key
-                                        ? 'bg-white text-blue-600 shadow-sm'
-                                        : 'text-gray-500 hover:text-gray-700'
-                                "
-                                @click="setShading(opt.key)"
-                            >
-                                {{ opt.label }}
-                            </button>
-                        </el-tooltip>
-                    </div>
-                </div>
+                <el-segmented
+                    :model-value="shadingState"
+                    @change="applyShading"
+                    size="small"
+                    :options="[
+                        { label: '隐藏底纹', value: 'never' },
+                        { label: '选中显示', value: 'selected' },
+                        { label: '始终显示', value: 'always' },
+                    ]"
+                />
             </div>
 
             <!-- 第二行：记录导航（独立一行，不拥挤） -->
@@ -150,14 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-    ArrowLeft,
-    ArrowRight,
-    DArrowLeft,
-    DArrowRight,
-    Document,
-    View,
-} from "@element-plus/icons-vue";
+import { ArrowLeft, ArrowRight, DArrowLeft, DArrowRight } from "@element-plus/icons-vue";
 import { vElementHover } from "@vueuse/components";
 
 import { useActiveDocumentWatcher } from "@/composables/useActiveDocumentWatcher";
@@ -168,7 +121,7 @@ import { getMergeFieldNames } from "@/jsa/commands/mergeMail";
 
 const { insertFieldAtCursor } = useMergeFieldActions();
 
-const { viewMode, shadingState, toggleView, setShading, refreshDisplayState } =
+const { viewMode, shadingState, applyShading, applyViewMode, refreshDisplayState } =
     useMergeFieldDisplay();
 
 const { recordCount, recordInput, moveRecord, commitRecord, refreshRecordState } =
@@ -204,8 +157,29 @@ function close() {
 </script>
 
 <style scoped>
-/* el-input 内部 padding 收紧，让输入框更紧凑 */
-.record-input :deep(.el-input__wrapper) {
-    padding: 0 2px;
+/* el-segmented 统一外观：浅灰底 + 白色选中滑块 + 蓝色文字 */
+:deep(.el-segmented) {
+    --el-segmented-bg-color: rgb(243 244 246 / 0.8); /* gray-100/80 */
+    --el-segmented-color: #6b7280; /* gray-500 */
+    --el-segmented-item-hover-bg-color: transparent;
+    --el-segmented-item-hover-color: #374151; /* gray-700 */
+    --el-segmented-item-active-bg-color: transparent;
+    --el-segmented-item-selected-bg-color: #fff;
+    --el-segmented-item-selected-color: #2563eb; /* blue-600 */
+    --el-border-radius-base: 16px;
+    padding: 4px;
+    box-shadow: none;
+}
+
+:deep(.el-segmented__item) {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 200ms;
+}
+
+:deep(.el-segmented__item-selected) {
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 </style>

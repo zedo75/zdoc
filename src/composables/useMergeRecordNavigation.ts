@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 import { getCurrentRecordNumber, getRecordCount, gotoRecord } from "@/jsa/commands/mergeMail";
 import { refreshMailMergeDataView } from "@/jsa/utils/document";
@@ -10,43 +10,50 @@ export type RecordDirection = "first" | "previous" | "next" | "last";
  * 邮件合并 - 记录导航
  *
  * 负责：
- *  - 当前记录号 / 记录总数 的同步
- *  - 输入框字符串值的维护
+ *  - 当前记录号 / 记录总数 的同步（文档镜像）
+ *  - 输入框字符串值的维护（UI 编辑态）
  *  - 上一条 / 下一条 / 首末条 / 跳转
  *  - 输入校验与失败回滚
  */
 export function useMergeRecordNavigation() {
-    /** 当前记录号（1-based，0 表示无记录） */
-    const currentRecord = ref(0);
-    /** 记录总数 */
-    const recordCount = ref(0);
-    /** 输入框的字符串值（便于处理空输入和非法输入） */
+    // ─── 文档镜像：WPS 是唯一真源，这里只是本地缓存 ───
+    // 只由 refreshRecordState() 写入，外部一律通过只读 computed 读取。
+    const currentRecordSource = ref(0);
+    const recordCountSource = ref(0);
+
+    // ─── UI 编辑态：与文档无关，仅 commit 时单向写入 ───
     const recordInput = ref("");
 
-    /** 从 WPS 读最新记录状态，同步到本地 ref */
+    // ─── 对外：只读派生 ───
+    /** 当前记录号（1-based，0 表示无记录） */
+    const currentRecord = computed(() => currentRecordSource.value);
+    /** 记录总数（0 表示无数据源） */
+    const recordCount = computed(() => recordCountSource.value);
+
+    /** 把输入框恢复成"当前记录号"的字符串（无记录时为空） */
+    function resetInput() {
+        recordInput.value = currentRecordSource.value > 0 ? String(currentRecordSource.value) : "";
+    }
+
+    /** 从 WPS 读最新记录状态，同步到本地 ref —— 只读文档，绝不写回 */
     function refreshRecordState() {
-        currentRecord.value = getCurrentRecordNumber();
-        recordCount.value = getRecordCount();
-        recordInput.value = currentRecord.value > 0 ? String(currentRecord.value) : "";
+        currentRecordSource.value = getCurrentRecordNumber();
+        recordCountSource.value = getRecordCount();
+        resetInput();
     }
 
     /**
      * 按方向移动记录并刷新本地状态。
      *
      * direction 使用字符串，模板里直接写 'first' / 'previous' / 'next' / 'last'。
-     * 直接使用 Wps.WdMailMergeActiveRecord 相对移动有时会 +2 / -2，
-     * 因此这里统一算出目标绝对序号再赋值。
+     * 不直接用 Wps.WdMailMergeActiveRecord 做相对移动（WPS 有时会 +2 / -2），
+     * 统一算出目标绝对序号，再交给 gotoRecord（内部会 clamp）。
      */
     function moveRecord(direction: RecordDirection) {
-        const mailMerge = Application.ActiveDocument.MailMerge;
-        if (!mailMerge.DataSource) return;
+        const total = recordCountSource.value;
+        if (total < 1) return;
 
-        const ds = Application.ActiveDocument.MailMerge.DataSource;
-        const total = ds.RecordCount; // 总记录数
-        if (!total || total < 1) return; // 没有数据直接返回
-
-        // 当前序号；某些状态下可能返回 0 / -1
-        const current = ds.ActiveRecord;
+        const current = currentRecordSource.value;
 
         let target: number;
         switch (direction) {
@@ -66,12 +73,7 @@ export function useMergeRecordNavigation() {
                 return;
         }
 
-        // 钳制到 [1, total]，避免越界后负数被当成相对位置
-        if (target < 1) target = 1;
-        if (target > total) target = total;
-
-        ds.ActiveRecord = target; // 始终赋正数 = 绝对序号
-
+        if (!gotoRecord(target)) return; // 越界由 gotoRecord 内部处理
         refreshMailMergeDataView();
         refreshRecordState();
     }
@@ -82,26 +84,24 @@ export function useMergeRecordNavigation() {
 
         // 空输入或非法输入 → 恢复原值
         if (raw === "") {
-            recordInput.value = currentRecord.value > 0 ? String(currentRecord.value) : "";
+            resetInput();
             return;
         }
         const parsed = Number(raw);
         if (!Number.isFinite(parsed)) {
-            recordInput.value = currentRecord.value > 0 ? String(currentRecord.value) : "";
+            resetInput();
             return;
         }
 
         const target = Math.floor(parsed);
-
-        // 无变化 → 不做任何操作
-        if (target === currentRecord.value) return;
+        if (target === currentRecordSource.value) return;
 
         // 跳转（gotoRecord 内部会 clamp 到 [1, RecordCount]）
         if (gotoRecord(target)) {
             refreshRecordState();
         } else {
             // 跳转失败 → 恢复原值
-            recordInput.value = currentRecord.value > 0 ? String(currentRecord.value) : "";
+            resetInput();
         }
     }
 
