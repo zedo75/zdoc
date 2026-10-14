@@ -281,3 +281,18 @@ function convertIndentForRange(range: Wps.Range) {
         para.Format.CharacterUnitFirstLineIndent = spaceCount;
     }
 }
+
+/**
+ * 获取选区覆盖的所有完整段落组成的 Range
+ */
+export function getFullParagraphRange(): Wps.Range | null {
+    const sel = Application.Selection;
+    if (!sel || sel.Type === wdSelectionIP) return null;
+
+    const paras = sel.Paragraphs;
+    if (!paras || paras.Count === 0) return sel.Range;
+
+    const start = paras.Item(1).Range.Start;
+    const end = paras.Item(paras.Count).Range.End;
+    return ActiveDocument.Range(start, end);
+}
