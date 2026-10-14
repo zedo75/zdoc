@@ -1,7 +1,7 @@
 import type { App } from "vue";
 
+import { useThrottleFn } from "@vueuse/core";
 import { ElMessage, ElNotification } from "element-plus";
-import { throttle } from "radash";
 
 // 判断是否为 WPS / Office 环境缺失错误
 function isWpsMissingError(err: unknown): boolean {
@@ -60,8 +60,8 @@ function handleUnhandledRejectionRaw(event: PromiseRejectionEvent) {
     console.error("Unhandled Rejection:", reason);
 }
 
-const handleError = throttle({ interval: 3000 }, handleErrorRaw);
-const handleUnhandledRejection = throttle({ interval: 3000 }, handleUnhandledRejectionRaw);
+const handleError = useThrottleFn(handleErrorRaw, 3000);
+const handleUnhandledRejection = useThrottleFn(handleUnhandledRejectionRaw, 3000);
 
 export function setupGlobalErrorHandler(app: App) {
     app.config.errorHandler = handleError;
