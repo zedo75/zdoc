@@ -9,13 +9,19 @@ import {
 } from "@/config/defaults";
 import { validateGovDocConfig } from "@/config/validator";
 import { loadGovDocConfigFromFile, saveGovDocConfigToFile } from "@/jsa/utils/filesSystem";
-import { STORAGE_KEYS } from "@/jsa/utils/storage";
+
+const KEY = {
+    typo: "zdoc:typo",
+    page: "zdoc:page",
+    header: "zdoc:header",
+    footer: "zdoc:footer",
+} as const;
 
 export function useGovDocConfig() {
-    const typography = useLocalStorage(STORAGE_KEYS.TYPO, DEFAULT_TYPO_CONFIG);
-    const pageLayout = useLocalStorage(STORAGE_KEYS.PAGE, DEFAULT_PAGE_LAYOUT_CONFIG);
-    const header = useLocalStorage(STORAGE_KEYS.HEADER, DEFAULT_HEADER_CONFIG);
-    const footer = useLocalStorage(STORAGE_KEYS.FOOTER, DEFAULT_FOOTER_CONFIG);
+    const typography = useLocalStorage(KEY.typo, DEFAULT_TYPO_CONFIG);
+    const pageLayout = useLocalStorage(KEY.page, DEFAULT_PAGE_LAYOUT_CONFIG);
+    const header = useLocalStorage(KEY.header, DEFAULT_HEADER_CONFIG);
+    const footer = useLocalStorage(KEY.footer, DEFAULT_FOOTER_CONFIG);
 
     /**
      * 重置为默认值

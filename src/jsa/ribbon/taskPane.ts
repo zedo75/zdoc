@@ -1,84 +1,88 @@
-import { getItem, removeItem, setItem, STORAGE_KEYS } from "@/jsa/utils/storage";
 import { getPaneUrl } from "@/utils/url";
 
-// 窗格标识 → src/views 下的页面名（URL 的 ?pane= 参数）
-const PANE_MAP: Record<string, string> = {
-    [STORAGE_KEYS.DOC_SETTINGS_ID]: "settings",
-    [STORAGE_KEYS.IMAGE_RESIZE_TASKPANE_ID]: "image-resize",
-    [STORAGE_KEYS.TEXT_COMPARE_TASKPANE_ID]: "text-compare",
-};
+const KEY = "__paneIdCache__";
 
-const paneIdCache = new Map<string, number>();
-
-function getPaneId(key: string): number | null {
-    if (paneIdCache.has(key)) return paneIdCache.get(key)!;
-    const stored = getItem(key);
-    if (stored) {
-        const id = Number(stored);
-        paneIdCache.set(key, id);
-        return id;
-    }
-    return null;
-}
-
-function hideAllOtherPanes(exclude: string): void {
-    for (const key of Object.keys(PANE_MAP)) {
-        if (key === exclude) continue;
-        const paneId = getPaneId(key);
-        if (!paneId) continue;
-        const taskPane = Application.GetTaskPane(paneId);
-        if (taskPane) {
-            taskPane.Visible = false;
-        } else {
-            paneIdCache.delete(key);
-            removeItem(key);
-        }
+/**
+ * 读取「页面名 → TaskPane ID」缓存
+ *
+ * HMR 会清空模块作用域，但 localStorage 的数据还在，会找回之前的 TaskPane ID，因此使用 sessionStorage
+ */
+function getCache(): Record<string, number> {
+    try {
+        return JSON.parse(sessionStorage.getItem(KEY) ?? "{}");
+    } catch {
+        return {};
     }
 }
 
-export function showTaskPane(key: string): void {
-    hideAllOtherPanes(key);
-
-    let paneId = getPaneId(key);
-    let taskPane = paneId ? Application.GetTaskPane(paneId) : null;
-
-    if (!taskPane) {
-        if (paneId) {
-            paneIdCache.delete(key);
-            removeItem(key);
-        }
-        const paneName = PANE_MAP[key];
-        if (!paneName) {
-            console.error(`找不到窗格页面: ${key}`);
-            return;
-        }
-        const url = getPaneUrl(paneName);
-        taskPane = Application.CreateTaskPane(url);
-        // 介于 1/3 和 1/4 之间的屏幕宽度
-        const width = Application.System.HorizontalResolution * 0.28 * window.devicePixelRatio;
-        taskPane.MinWidth = ~~width;
-        if (!taskPane) {
-            console.error(`创建任务窗格失败: ${key}`);
-            return;
-        }
-        paneIdCache.set(key, taskPane.ID);
-        setItem(key, String(taskPane.ID));
+/**
+ * 根据 ID 获取任务窗格实例
+ *
+ * @param id 任务窗格 ID
+ */
+function getPane(id?: number) {
+    if (!id) return null;
+    try {
+        return Application.GetTaskPane(id);
+    } catch {
+        return null;
     }
-
-    taskPane.Visible = true;
 }
 
-export function toggleTaskPane(key: string): void {
-    const paneId = getPaneId(key);
-    const taskPane = paneId ? Application.GetTaskPane(paneId) : null;
+/**
+ * 显示指定窗格（互斥：关闭其它已打开的窗格）。
+ *
+ * 若目标窗格已存在则直接显示；否则创建新的任务窗格，
+ * 并按屏幕宽度设置初始最小宽度，随后解除限制，
+ * 最后将窗格 ID 写入缓存以便后续复用。
+ *
+ * @param pageName src/views 下的页面名，对应 URL 的 `?pane=` 参数
+ * @param title 任务窗格标题
+ */
+export function showTaskPane(pageName: string, title?: string): void {
+    const cache = getCache();
 
-    if (taskPane) {
-        if (taskPane.Visible) {
-            taskPane.Visible = false;
-        } else {
-            showTaskPane(key);
-        }
-    } else {
-        showTaskPane(key);
+    // 隐藏其它窗格
+    for (const name in cache) {
+        if (name === pageName) continue;
+        const other = getPane(cache[name]);
+        if (other) other.Visible = false;
     }
+
+    // 显示或创建目标
+    let pane = getPane(cache[pageName]);
+    if (pane) {
+        pane.Visible = true;
+        return;
+    }
+
+    pane = Application.CreateTaskPane(getPaneUrl(pageName), title);
+    if (!pane) {
+        console.error(`创建任务窗格失败: ${pageName}`);
+        return;
+    }
+    // 介于 1/3 和 1/4 之间的屏幕宽度
+    pane.MinWidth = ~~(Application.System.HorizontalResolution * 0.28 * window.devicePixelRatio);
+    pane.Visible = true;
+    // 面板显示之前限制最小宽度，避免刚打开时需要用户调整尺寸，随后不再限制
+    pane.MinWidth = 1;
+
+    cache[pageName] = pane.ID;
+    try {
+        sessionStorage.setItem(KEY, JSON.stringify(cache));
+    } catch {}
+}
+
+/**
+ * 切换指定窗格的可见性。
+ *
+ * 窗格当前可见时隐藏；不可见或尚未创建时调用 showTaskPane 显示。
+ *
+ * @param pageName src/views 下的页面名，对应 URL 的 `?pane=` 参数
+ * @param title 任务窗格标题
+ */
+export function toggleTaskPane(pageName: string, title?: string): void {
+    const pane = getPane(getCache()[pageName]);
+    if (pane && pane.Visible) pane.Visible = false;
+    else showTaskPane(pageName, title);
 }

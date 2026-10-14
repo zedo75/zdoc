@@ -17,7 +17,6 @@ import {
 } from "@/jsa/commands/punctuation";
 import { toggleTaskPane } from "@/jsa/ribbon/taskPane";
 import { withUndoRecord } from "@/jsa/utils/document";
-import { STORAGE_KEYS } from "@/jsa/utils/storage";
 import {
     setFontAsciiToEast,
     setFontFS,
@@ -54,7 +53,7 @@ const actionHandlers: Partial<Record<RibbonControlId, RibbonAction>> = {
         const config = getTypoConfig();
         quickFormat(config);
     },
-    btnTypoConfig: () => toggleTaskPane(STORAGE_KEYS.DOC_SETTINGS_ID),
+    btnTypoConfig: () => toggleTaskPane("settings", "公文设置"),
     btnImageTypo: () => withUndoRecord(formatInlineImages),
     btnTableTypo: () => {},
     btnJustifyAttach: () => withUndoRecord(formatAttachments),
@@ -116,7 +115,7 @@ const actionHandlers: Partial<Record<RibbonControlId, RibbonAction>> = {
     btnCorrectPunctuation: () => withUndoRecord(correctPunctuation),
     btnChangeCase: () => withUndoRecord(openWpsChangeCaseDialog),
 
-    btnTextViewCompare: () => toggleTaskPane(STORAGE_KEYS.TEXT_COMPARE_TASKPANE_ID),
+    btnTextViewCompare: () => toggleTaskPane("text-compare", "文本对比"),
 
     btnNumberToStatic: convertNumberingToStatic,
     btnMailMergeDialog: () => {
@@ -135,7 +134,7 @@ const actionHandlers: Partial<Record<RibbonControlId, RibbonAction>> = {
     },
 
     // 图片工具
-    btnPictureResize: () => toggleTaskPane(STORAGE_KEYS.IMAGE_RESIZE_TASKPANE_ID),
+    btnPictureResize: () => toggleTaskPane("image-resize", "图片调整"),
     btnExportPicture: exportAllImages,
 
     btnClearEmptyPara: () => {
