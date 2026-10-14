@@ -1,5 +1,5 @@
 <template>
-    <SectionPanel name="footer" title="页脚设置" icon="/images/footer.svg" :actions="actions">
+    <SectionPanel name="footer" title="页脚设置" icon="./images/footer.svg" :actions="actions">
         <FooterSettings />
 
         <!-- 页码状态 -->
@@ -31,7 +31,6 @@ const actions: SectionAction[] = [
 
 onMounted(refreshStatus);
 
-useActiveDocumentWatcher(() => {
-    refreshStatus();
-});
+// 切换文档时更新页脚页码设置情况
+useActiveDocumentWatcher(refreshStatus);
 </script>

@@ -1,5 +1,5 @@
 <template>
-    <SectionPanel name="header" title="页眉设置" icon="/images/header.svg" :actions="actions">
+    <SectionPanel name="header" title="页眉设置" icon="./images/header.svg" :actions="actions">
         <HeaderSettings v-model="header" />
     </SectionPanel>
 </template>
