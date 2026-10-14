@@ -51,6 +51,26 @@ if (typeof window.wpsAlert === 'undefined') {
     window.wpsAlert = wpsAlert;
     window.wpsConfirm = wpsConfirm;
 }
+
+if (typeof Application !== "undefined") {
+    Object.defineProperty(globalThis, "ActiveDocument", {
+        get: () => Application.ActiveDocument,
+        configurable: true,
+        enumerable: false,
+    });
+
+    Object.defineProperty(globalThis, "ActiveWindow", {
+        get: () => Application.ActiveWindow,
+        configurable: true,
+        enumerable: false,
+    });
+
+    Object.defineProperty(globalThis, "wpsSelection", {
+        get: () => Application.Selection,
+        configurable: true,
+        enumerable: false,
+    });
+}
 `;
 }
 
@@ -117,13 +137,7 @@ export function wpsEnhancePlugin(options: WpsEnhanceOptions): Plugin {
             isDev = command === "serve";
 
             // 在 config 钩子中返回要合并的配置
-            return {
-                define: {
-                    ActiveDocument: "Application.ActiveDocument",
-                    ActiveWindow: "Application.ActiveWindow",
-                    wpsSelection: "Application.Selection",
-                },
-            };
+            return {};
         },
         configResolved(resolved) {
             root = resolved.root;
