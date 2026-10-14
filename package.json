@@ -6,10 +6,13 @@
     "type": "module",
     "scripts": {
         "postinstall": "pnpm exec lefthook install",
+        "predev": "node scripts/wps.js dev --port 3889",
         "dev": "vite --port 3889",
         "build": "vite build",
+        "build:install": "node scripts/wps.js install",
         "build:zip": "wpsjs build",
         "build:exe": "wpsjs build --exe",
+        "prepreview": "node scripts/wps.js dev --port 4173",
         "preview": "vite preview",
         "fmt": "prettier --write src/ && prettier --write plugins/*/src/**/*.{js,ts}",
         "clear": "rimraf node_modules",
