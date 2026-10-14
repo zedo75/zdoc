@@ -8,7 +8,7 @@ declare global {
     /*
      * Wps 命名空间扩展
      */
-    declare namespace Wps {
+    namespace Wps {
         interface Application {
             /**
              * 启用/禁用 WPS 事件。
@@ -47,22 +47,31 @@ declare global {
     /**
      * 补充 WPS 原生样式弹窗类型
      */
-    declare function alert(text: string, showWpsCustomDialog?: boolean | 0 | 1): void;
+    function alert(text: string, showWpsCustomDialog?: boolean | 0 | 1): void;
 
     /**
      * index.d.ts 中由定义，此处允许参数填入 0 | 1
      */
-    declare function confirm(text: string, showWpsCustomDialog?: boolean | 0 | 1): 1 | 0;
+    function confirm(text: string, showWpsCustomDialog?: boolean | 0 | 1): 1 | 0;
+
+    /**
+     * 将 RGB 颜色转换为 WPS JSA 可识别的颜色值
+     * @param {number} r - 红色通道 (0-255)
+     * @param {number} g - 绿色通道 (0-255)
+     * @param {number} b - 蓝色通道 (0-255)
+     * @returns {number} WPS JSA 颜色整数
+     */
+    function RGB(r: number, g: number, b: number): number;
 
     /**
      * WPS 原生样式弹窗
      */
-    declare const wpsAlert: typeof Application.alert;
+    const wpsAlert: typeof Application.alert;
 
     /**
      * WPS 原生样式弹窗
      */
-    declare const wpsConfirm: typeof Application.confirm;
+    const wpsConfirm: typeof Application.confirm;
 
     /**
      * ActiveDocument 裸名引用（等同于 `Application.ActiveDocument`）。

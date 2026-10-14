@@ -71,6 +71,10 @@ if (typeof Application !== "undefined") {
         enumerable: false,
     });
 }
+
+window.RGB = function (r, g, b) {
+    return (1 << 24) + (b << 16) + (g << 8) + r;
+};
 `;
 }
 
