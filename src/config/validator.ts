@@ -6,7 +6,7 @@ import type {
     TypographyConfig,
 } from "@/jsa/types";
 
-import { z } from "zod";
+import * as v from "valibot";
 
 import {
     DEFAULT_FOOTER_CONFIG,
@@ -15,94 +15,78 @@ import {
     DEFAULT_TYPO_CONFIG,
 } from "@/config/defaults";
 
-const PageLayoutSchema = z
-    .object({
-        top: z.number().min(0).default(DEFAULT_PAGE_LAYOUT_CONFIG.top),
-        bottom: z.number().min(0).default(DEFAULT_PAGE_LAYOUT_CONFIG.bottom),
-        left: z.number().min(0).default(DEFAULT_PAGE_LAYOUT_CONFIG.left),
-        right: z.number().min(0).default(DEFAULT_PAGE_LAYOUT_CONFIG.right),
-        header: z.number().min(0).default(DEFAULT_PAGE_LAYOUT_CONFIG.header),
-        footer: z.number().min(0).default(DEFAULT_PAGE_LAYOUT_CONFIG.footer),
-    })
-    .strip(); // strict(): 拒绝未知键（抛错）; strip()：删除未知键（静默忽略）
+const PageLayoutSchema = v.object({
+    top: v.optional(v.pipe(v.number(), v.minValue(0)), DEFAULT_PAGE_LAYOUT_CONFIG.top),
+    bottom: v.optional(v.pipe(v.number(), v.minValue(0)), DEFAULT_PAGE_LAYOUT_CONFIG.bottom),
+    left: v.optional(v.pipe(v.number(), v.minValue(0)), DEFAULT_PAGE_LAYOUT_CONFIG.left),
+    right: v.optional(v.pipe(v.number(), v.minValue(0)), DEFAULT_PAGE_LAYOUT_CONFIG.right),
+    header: v.optional(v.pipe(v.number(), v.minValue(0)), DEFAULT_PAGE_LAYOUT_CONFIG.header),
+    footer: v.optional(v.pipe(v.number(), v.minValue(0)), DEFAULT_PAGE_LAYOUT_CONFIG.footer),
+});
 
-const TitleFontSchema = z
-    .object({
-        zh: z.string().default(DEFAULT_TYPO_CONFIG.title.zh),
-        en: z.string().default(DEFAULT_TYPO_CONFIG.title.en),
-        size: z.number().positive().default(DEFAULT_TYPO_CONFIG.title.size),
-        spacing: z.number().nonnegative().default(DEFAULT_TYPO_CONFIG.title.spacing),
-    })
-    .strip();
+const TitleFontSchema = v.object({
+    zh: v.optional(v.string(), DEFAULT_TYPO_CONFIG.title.zh),
+    en: v.optional(v.string(), DEFAULT_TYPO_CONFIG.title.en),
+    size: v.optional(v.pipe(v.number(), v.gtValue(0)), DEFAULT_TYPO_CONFIG.title.size),
+    spacing: v.optional(v.pipe(v.number(), v.minValue(0)), DEFAULT_TYPO_CONFIG.title.spacing),
+});
 
-const MainFontSchema = z
-    .object({
-        zh: z.string().default(DEFAULT_TYPO_CONFIG.main.zh),
-        en: z.string().default(DEFAULT_TYPO_CONFIG.main.en),
-        size: z.number().positive().default(DEFAULT_TYPO_CONFIG.main.size),
-        spacing: z.number().nonnegative().default(DEFAULT_TYPO_CONFIG.main.spacing),
-        indent: z.number().nonnegative().default(DEFAULT_TYPO_CONFIG.main.indent),
-    })
-    .strip();
+const MainFontSchema = v.object({
+    zh: v.optional(v.string(), DEFAULT_TYPO_CONFIG.main.zh),
+    en: v.optional(v.string(), DEFAULT_TYPO_CONFIG.main.en),
+    size: v.optional(v.pipe(v.number(), v.gtValue(0)), DEFAULT_TYPO_CONFIG.main.size),
+    spacing: v.optional(v.pipe(v.number(), v.minValue(0)), DEFAULT_TYPO_CONFIG.main.spacing),
+    indent: v.optional(v.pipe(v.number(), v.minValue(0)), DEFAULT_TYPO_CONFIG.main.indent),
+});
 
-const SalutationSchema = z
-    .object({
-        font: z.string().default(DEFAULT_TYPO_CONFIG.salutation.font),
-        bold: z.boolean().default(DEFAULT_TYPO_CONFIG.salutation.bold),
-    })
-    .strip();
+const SalutationSchema = v.object({
+    font: v.optional(v.string(), DEFAULT_TYPO_CONFIG.salutation.font),
+    bold: v.optional(v.boolean(), DEFAULT_TYPO_CONFIG.salutation.bold),
+});
 
-const HeadingSchema = z
-    .object({
-        font: z.string().default(DEFAULT_TYPO_CONFIG.h1.font),
-        bold: z.boolean().default(DEFAULT_TYPO_CONFIG.h1.bold),
-    })
-    .strip();
+const HeadingSchema = v.object({
+    font: v.optional(v.string(), DEFAULT_TYPO_CONFIG.h1.font),
+    bold: v.optional(v.boolean(), DEFAULT_TYPO_CONFIG.h1.bold),
+});
 
-const TypographySchema = z
-    .object({
-        title: TitleFontSchema.default(DEFAULT_TYPO_CONFIG.title),
-        main: MainFontSchema.default(DEFAULT_TYPO_CONFIG.main),
-        salutation: SalutationSchema.default(DEFAULT_TYPO_CONFIG.salutation),
-        h1: HeadingSchema.default(DEFAULT_TYPO_CONFIG.h1),
-        h2: HeadingSchema.default(DEFAULT_TYPO_CONFIG.h2),
-        h3: HeadingSchema.default(DEFAULT_TYPO_CONFIG.h3),
-        topicBoldMode: z
-            .enum(["auto", "prefix", "none"])
-            .default(DEFAULT_TYPO_CONFIG.topicBoldMode),
-    })
-    .strip();
+const TypographySchema = v.object({
+    title: v.optional(TitleFontSchema, DEFAULT_TYPO_CONFIG.title),
+    main: v.optional(MainFontSchema, DEFAULT_TYPO_CONFIG.main),
+    salutation: v.optional(SalutationSchema, DEFAULT_TYPO_CONFIG.salutation),
+    h1: v.optional(HeadingSchema, DEFAULT_TYPO_CONFIG.h1),
+    h2: v.optional(HeadingSchema, DEFAULT_TYPO_CONFIG.h2),
+    h3: v.optional(HeadingSchema, DEFAULT_TYPO_CONFIG.h3),
+    topicBoldMode: v.optional(
+        v.picklist(["auto", "prefix", "none"]),
+        DEFAULT_TYPO_CONFIG.topicBoldMode,
+    ),
+});
 
-const HeaderSchema = z
-    .object({
-        content: z.string().default(DEFAULT_HEADER_CONFIG.content),
-        position: z.enum(["left", "center", "right"]).default(DEFAULT_HEADER_CONFIG.position),
-        font: z.string().default(DEFAULT_HEADER_CONFIG.font),
-        fontSize: z.number().positive().default(DEFAULT_HEADER_CONFIG.fontSize),
-    })
-    .strip();
+const HeaderSchema = v.object({
+    content: v.optional(v.string(), DEFAULT_HEADER_CONFIG.content),
+    position: v.optional(v.picklist(["left", "center", "right"]), DEFAULT_HEADER_CONFIG.position),
+    font: v.optional(v.string(), DEFAULT_HEADER_CONFIG.font),
+    fontSize: v.optional(v.pipe(v.number(), v.gtValue(0)), DEFAULT_HEADER_CONFIG.fontSize),
+});
 
-const FooterSchema = z
-    .object({
-        font: z.string().default(DEFAULT_FOOTER_CONFIG.font),
-        fontSize: z.number().positive().default(DEFAULT_FOOTER_CONFIG.fontSize),
-        position: z
-            .enum(["left", "right", "middle", "inside", "outside"])
-            .default(DEFAULT_FOOTER_CONFIG.position),
-    })
-    .strip();
+const FooterSchema = v.object({
+    font: v.optional(v.string(), DEFAULT_FOOTER_CONFIG.font),
+    fontSize: v.optional(v.pipe(v.number(), v.gtValue(0)), DEFAULT_FOOTER_CONFIG.fontSize),
+    position: v.optional(
+        v.picklist(["left", "right", "middle", "inside", "outside"]),
+        DEFAULT_FOOTER_CONFIG.position,
+    ),
+});
 
-const GovDocConfigSchema = z
-    .object({
-        pageLayout: PageLayoutSchema.default(DEFAULT_PAGE_LAYOUT_CONFIG),
-        typography: TypographySchema.default(DEFAULT_TYPO_CONFIG),
-        header: HeaderSchema.default(DEFAULT_HEADER_CONFIG),
-        footer: FooterSchema.default(DEFAULT_FOOTER_CONFIG),
-    })
-    .strip();
+const GovDocConfigSchema = v.object({
+    pageLayout: v.optional(PageLayoutSchema, DEFAULT_PAGE_LAYOUT_CONFIG),
+    typography: v.optional(TypographySchema, DEFAULT_TYPO_CONFIG),
+    header: v.optional(HeaderSchema, DEFAULT_HEADER_CONFIG),
+    footer: v.optional(FooterSchema, DEFAULT_FOOTER_CONFIG),
+});
 
 export function validateGovDocConfig(config: any): GovDocConfig {
-    return GovDocConfigSchema.parse(config ?? {});
+    return v.parse(GovDocConfigSchema, config ?? {});
 }
 
 export function validateHeaderFooterConfig(config: any): {
@@ -110,15 +94,15 @@ export function validateHeaderFooterConfig(config: any): {
     footer: FooterConfig;
 } {
     return {
-        header: HeaderSchema.parse(config?.header || {}),
-        footer: FooterSchema.parse(config?.footer || {}),
+        header: v.parse(HeaderSchema, config?.header || {}),
+        footer: v.parse(FooterSchema, config?.footer || {}),
     };
 }
 
 export function validatePageLayout(config: any): PageLayoutConfig {
-    return PageLayoutSchema.parse(config || {});
+    return v.parse(PageLayoutSchema, config || {});
 }
 
 export function validateTypography(config: any): TypographyConfig {
-    return TypographySchema.parse(config || {});
+    return v.parse(TypographySchema, config || {});
 }
