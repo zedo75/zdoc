@@ -1,7 +1,8 @@
 import type { PageLayoutConfig } from "@/jsa/types";
 
 import { DEFAULT_PAGE_LAYOUT_CONFIG } from "@/config/defaults";
-import { ATTACHMENT_LIST_REGEX, ATTACHMENT_LIST_WILDCARDS, handleAttachments } from "@/utils/typo";
+import { ATTACHMENT_LIST_REGEX, ATTACHMENT_LIST_WILDCARDS } from "@/utils/para-patterns";
+import { handleAttachments } from "@/utils/typo";
 
 /**
  * 设置当前文档的页面布局

@@ -1,10 +1,10 @@
 import type { TypographyConfig } from "@/jsa/types";
+import type { DocumentStructure } from "@/utils/para-types";
 
 import { formatAttachments } from "@/jsa//commands/document";
 import { withUndoRecord } from "@/jsa/utils/document";
 import { scope } from "@/jsa/utils/performance";
-import { DATE_REGEX } from "@/utils/typo";
-import { analyzeDocument, applyModifications, parseParagraphs } from "@/utils/typo-engine";
+import { analyzeDocument, applyModifications, parseParagraphs } from "@/utils/para-pipeline";
 
 /**
  * 设置正文样式，避免频繁地直接操作 Range，优化运行效率
@@ -108,22 +108,26 @@ function formatGovDoc(config: TypographyConfig, doc: Wps.Document = ActiveDocume
 
     // 传入 doc：启用"按需读取深层快照 + 差异生成修改指令"
     // → 已完成排版的段落不再重复执行 COM 写操作（大幅加快二次/多次排版速度）
-    const modifications = scope("分析+差异", () =>
+    const { modifications, structure } = scope("分析+差异", () =>
         analyzeDocument(infos, config, true, mainStyleName, titleStyleName, doc),
     );
 
-    scope("应用修改", () => applyModifications(doc, modifications, mainStyle, titleStyle));
-    scope("多行标题", () => processMultiLineTitle(doc));
-    scope("落款格式化", () => formatSignature(doc));
+    scope("应用修改", () => applyModifications(doc, modifications));
+    scope("落款格式化", () => formatSignature(doc, structure));
+    if (config.softLineBreakForTitle) {
+        scope("多行标题", () => softLineBreakTitle(doc));
+    }
 }
 
 /**
- * 处理多行标题
+ * 将 "连续公文标题段落" 的段末 \r 改为软换行 \v。
+ *
  * - 搜索连续的「公文标题」样式段落，比较相邻段落的字体和字号
  * - 若字体字号一致，将前一段末尾的段落标记替换为软换行符（\r → \v）
+ * - 普通公文排版不应调用，通常只在 "制作目录 / 汇编文件" 场景下需要
  * @param doc 目标文档，默认为当前活动文档
  */
-function processMultiLineTitle(doc: Wps.Document = ActiveDocument) {
+function softLineBreakTitle(doc: Wps.Document = ActiveDocument) {
     const paras = doc.Paragraphs;
     const count = paras.Count;
     const titleStyleName = "公文标题";
@@ -168,37 +172,30 @@ const HALF_WIDTH_PER_CJK = 2;
 const CJK_LATIN_ADJUST = 5 / 2;
 
 /**
- * 落款：署名（发文机关）、成文日期
+ * 落款：署名（发文机关）、成文日期。
+ *
  * @param doc 目标文档，默认为当前活动文档
+ * @param structure 结构分析结果；传入则直接使用已识别的位置（可能多个）
  * @param chars 落款右侧留空字数（中文字符数）。加盖印章的公文：4（默认）；不加盖印章的公文：2。
  */
-function formatSignature(doc: Wps.Document = ActiveDocument, chars = 4) {
-    let datePara = null,
-        unitPara = null;
+function formatSignature(
+    doc: Wps.Document = ActiveDocument,
+    structure?: DocumentStructure,
+    chars = 4,
+) {
+    const signatures = structure?.signatures ?? [];
+    if (signatures.length === 0) return; // 没有识别到任何落款
 
     const paras = doc.Paragraphs;
-    const count = paras.Count;
-    // 从后往前查找日期段落
-    for (let i = count; i >= 1; i--) {
-        const p = paras.Item(i);
-        if (DATE_REGEX.test(p.Range.Text)) {
-            datePara = p;
-            unitPara = datePara.Previous();
-            break;
-        }
-    }
-    if (!datePara || !unitPara) return; // "未找到成文日期或署名"
 
-    // 去除段落首位空白字符，使得多次运行的效果仍保持一致
-    let unitText = unitPara.Range.Text.trim();
-    let dateText = datePara.Range.Text.trim();
+    // 右空边距，统一以半角空格为单位
+    const rightMargin = chars * HALF_WIDTH_PER_CJK;
+
     // 等效长度：中文=2，半角（英文/数字/空格）=1
     const eqLen = (s: string) =>
         [...s].reduce((sum, cur) => sum + (/[\u0000-\u00ff]/.test(cur) ? 1 : 2), 0);
 
-    const processPara = (para: Wps.Paragraph | null, padSpaces: number) => {
-        if (!para) return;
-
+    const processPara = (para: Wps.Paragraph, padSpaces: number) => {
         const rng = para.Range;
         rng.MoveEnd(wdCharacter, -1); // 排除段落标记
         const text = rng.Text.trim();
@@ -209,14 +206,44 @@ function formatSignature(doc: Wps.Document = ActiveDocument, chars = 4) {
         para.WordWrap = 0; // 避免段落末尾空格悬挂在页边距外（不占实际空间）
     };
 
-    // 右空边距，统一以半角空格为单位
-    const rightMargin = chars * HALF_WIDTH_PER_CJK;
-    // diff 是落款单位右侧需要补齐的半角空格个数，计算思路是两行落款的“线段中点”与版芯右边的距离相等
-    const diff = Math.round(
-        (eqLen(dateText) + CJK_LATIN_ADJUST) / 2 + rightMargin - eqLen(unitText) / 2,
-    );
-    processPara(unitPara, Math.max(diff, 0));
-    processPara(datePara, rightMargin + Math.max(-diff, 0));
+    const processSignature = (unitParas: Wps.Paragraph[], datePara: Wps.Paragraph) => {
+        const dateText = datePara.Range.Text.trim();
+        if (!dateText) return;
+
+        // 无单位：只处理日期
+        if (unitParas.length === 0) {
+            processPara(datePara, rightMargin);
+            return;
+        }
+
+        // 每行的等效长度，取最长单位行作为对齐基准
+        const unitLens = unitParas.map((p) => eqLen(p.Range.Text.trim()));
+        const maxUnitLen = Math.max(...unitLens);
+
+        // diff 是落款单位右侧需要补齐的半角空格个数，计算思路是两行落款的“线段中点”与版芯右边的距离相等
+        // 基于最长行计算 → 最长行的中心与日期中心对齐
+        const diff = Math.round(
+            (eqLen(dateText) + CJK_LATIN_ADJUST) / 2 + rightMargin - maxUnitLen / 2,
+        );
+
+        // 每行独立 padding：
+        //   最长行 → diff
+        //   短行   → diff + (maxUnitLen - len)，补齐到与最长行相同的总宽
+        for (let k = 0; k < unitParas.length; k++) {
+            const pad = Math.max(diff + (maxUnitLen - unitLens[k]), 0);
+            processPara(unitParas[k], pad);
+        }
+
+        processPara(datePara, rightMargin + Math.max(-diff, 0));
+    };
+
+    // 倒序处理多个落款（避免未来扩展时索引偏移）
+    for (let i = signatures.length - 1; i >= 0; i--) {
+        const sig = signatures[i];
+        const datePara = paras.Item(sig.dateIndex + 1);
+        const unitParas = sig.unitIndices.map((idx) => paras.Item(idx + 1));
+        processSignature(unitParas, datePara);
+    }
 }
 
 /**

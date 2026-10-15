@@ -73,6 +73,10 @@ export interface TypographyConfig {
      * 小标题加粗模式，或段落中对仗的"小标题"（一是...）
      */
     topicBoldMode: TopicBoldMode;
+    /**
+     * 是否将连续标题行的段落标记改为软换行（制作目录时用）
+     */
+    softLineBreakForTitle?: boolean;
 }
 
 export interface PageLayoutConfig {
