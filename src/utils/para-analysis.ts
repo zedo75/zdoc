@@ -20,6 +20,7 @@ import {
     H1_REGEX,
     H2_REGEX,
     H3_REGEX,
+    LIST_ITEM_PREFIX_REGEX,
     SALUTATION_EACH_UNIT_REGEX,
     SALUTATION_EXCLUDE_REGEX,
     SALUTATION_GREETING_REGEX,
@@ -49,6 +50,25 @@ export function looksLikeSalutation(text: string): boolean {
         SALUTATION_JOB_TITLE_REGEX,
     ];
     return words.some((w) => patterns.some((p) => p.test(w)));
+}
+
+/**
+ * 段落是 h3 候选（满足 H3_REGEX 且第一个句号前 ，/、 少于 2 个）。
+ *
+ * 第一个句号前分隔符过多说明这是"并列描述"而不是标题，
+ * 例如"接到任务后，由甲或乙确定时间、地点、人数需求。"——
+ * 前 23 字内已包含多个顿号，不符合标题的简洁特征。
+ */
+export function isH3Candidate(text: string): boolean {
+    if (!H3_REGEX.test(text)) return false;
+
+    const firstPeriod = text.indexOf("。");
+    if (firstPeriod > 0) {
+        const before = text.slice(0, firstPeriod);
+        const sepCount = (before.match(/[，、]/g) || []).length;
+        if (sepCount >= 2) return false;
+    }
+    return true;
 }
 
 /**
@@ -152,11 +172,16 @@ function matchSubMatches(text: string): StructuredParaInfo["subMatches"] {
  * 对单段文本做初步语义识别。
  *
  * @param info 段落基础信息
+ * @param prevIsListItem 上一段的语义是否为 `listItem`。
+ *     用于抑制 "编号列表项被误判为 h3"
  * @returns 语义类别集合、主分类，以及是否为副标题行
  *
  * 不处理主标题块、落款等需要全局上下文的判断。
  */
-function classifyPara(info: BaseParaInfo): {
+function classifyPara(
+    info: BaseParaInfo,
+    prevIsListItem: boolean,
+): {
     kinds: Set<ParagraphSemanticKind>;
     primary: ParagraphSemanticKind;
     isSubtitleLine?: boolean;
@@ -187,7 +212,12 @@ function classifyPara(info: BaseParaInfo): {
     // 层级标题（每段最多匹配一个）
     if (H1_REGEX.test(text)) kinds.add("h1");
     else if (H2_REGEX.test(text)) kinds.add("h2");
-    else if (H3_REGEX.test(text)) kinds.add("h3");
+    else if (isH3Candidate(text) && !prevIsListItem) {
+        kinds.add("h3");
+    } else if (LIST_ITEM_PREFIX_REGEX.test(text)) {
+        // 以"数字."开头、但不是 h3 → 列表项
+        kinds.add("listItem");
+    }
 
     // 副标题（单行判断，主标题块内部再提升为 subtitle）
     const isSubtitle = isSubtitleLine(text);
@@ -204,11 +234,12 @@ function classifyPara(info: BaseParaInfo): {
         kinds.add("body");
     }
 
-    // 主分类优先级：h1/h2/h3 > salutation > attachment > topic > body
+    // 主分类优先级
     const priority: ParagraphSemanticKind[] = [
         "h1",
         "h2",
         "h3",
+        "listItem", // 和 h3 互斥，和 salutation/attachment 也几乎不会同时命中（判定前缀不同）
         "salutation",
         "attachment",
         "topic",
@@ -352,20 +383,27 @@ export function analyzeDocumentStructure(
     isFullDoc: boolean = true,
 ): DocumentStructure {
     // 1. 初步逐段分类
-    const paragraphs: StructuredParaInfo[] = baseInfos.map((info, idx) => {
-        const { kinds, primary, isSubtitleLine } = classifyPara(info);
-        // 标记是否 heading（h1/h2/h3）
+    const paragraphs: StructuredParaInfo[] = [];
+    let prevIsListItem = false; // 状态沿段落序列传递
+
+    for (let idx = 0; idx < baseInfos.length; idx++) {
+        const info = baseInfos[idx];
+        const { kinds, primary, isSubtitleLine } = classifyPara(info, prevIsListItem);
         const isHeading = kinds.has("h1") || kinds.has("h2") || kinds.has("h3");
-        return {
+
+        paragraphs.push({
             ...info,
-            index: idx + 1, // 1-based
+            index: idx + 1,
             semanticKinds: kinds,
             primaryKind: primary,
             subMatches: kinds.has("topic") ? matchSubMatches(info.text) : [],
             isHeading,
             isSubtitleLine,
-        };
-    });
+        });
+
+        // 更新状态：本段是否是列表项（只有 "列表项" 才延续状态）
+        prevIsListItem = kinds.has("listItem");
+    }
 
     // 2. 全文模式下：主标题块识别（复用现有函数）
     let mainTitleBlocks: Array<[number, number]> = [];

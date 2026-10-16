@@ -22,6 +22,9 @@ export const H3_REGEX = /^(?!.*(?:：|\u2005))[0-9]{1,2}\..{1,23}?(?:。|[^；;]
 export const TOPIC_REGEX = /(?<=^|[。？！])[一二三四五六七八九十][是要].*?。/g; // 小标题
 export const TOPIC_PREFIX_REGEX = /^[一二三四五六七八九十][是要]/;
 
+/** 段落是否以"数字."开头（与 H3_REGEX 的前缀一致） */
+export const LIST_ITEM_PREFIX_REGEX = /^[0-9]{1,2}\./;
+
 // 标题中禁止出现的符号
 export const FORBIDDEN_SYMBOLS_REGEX = /[。；！？【】〖〗_=|{}<>#&~$^*※\[\]\\]/;
 export const ATTACHMENT_WILDCARDS = "^m附件[0-9]{1,}^p"; // 附件通配符

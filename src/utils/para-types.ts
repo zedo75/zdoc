@@ -76,6 +76,8 @@ export type ParagraphSemanticKind =
     | "h2"
     /** 三级标题：1. 2. …… */
     | "h3"
+    /** 编号列表项（"1. xxx" 且非三级标题） */
+    | "listItem"
     /** 段内小标题：一是…… / 二要…… */
     | "topic"
     /** 附件标题行 */
