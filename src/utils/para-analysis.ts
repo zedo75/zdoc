@@ -491,7 +491,13 @@ export function makeTitleSubRange(
 ): SubRangeMod[] | undefined {
     const match = regex.exec(text);
     if (!match) return undefined;
-    const sub: SubRangeMod = { start: match.index, length: match[0].length };
+
+    // 若匹配包含段尾 \r，从子范围中排除（避免覆盖段落标记）
+    const matched = match[0];
+    const length = matched.endsWith("\r") ? matched.length - 1 : matched.length;
+    if (length <= 0) return undefined;
+
+    const sub: SubRangeMod = { start: match.index, length };
     if (cfg.font) sub.fontName = cfg.font;
     if (cfg.bold !== undefined) sub.bold = !!cfg.bold;
     return [sub];
