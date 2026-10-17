@@ -44,6 +44,27 @@ export const LIST_ITEM_PREFIX_REGEX = /^[0-9]{1,2}\./;
  * 主标题（公文标题）中禁止出现的符号。
  */
 export const MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX = /[。；！？【】〖〗_=|{}<>#&~$^*※\[\]\\]/;
+
+// ==================== 副标题相关 ====================
+
+/** 副标题：括号内含"稿/案"，如（送审稿）、（征求意见稿） */
+export const SUBTITLE_DRAFT_REGEX = /^（[^）]*[稿案][^）]*）$/;
+
+/** 副标题：带括号的公文文号，如（某委〔2026〕1号） */
+export const SUBTITLE_DOC_NUMBER_REGEX = /^（[^\s]{2,6}\u3014\d{4}\u3015\d+号）$/;
+
+/** 副标题：括号日期，支持 X / 空格占位，如（2024年X月X日） */
+export const SUBTITLE_BRACKET_DATE_REGEX =
+    /^（[0-9xX]{4}年[0-9xX \u3000]{1,2}月[0-9xX \u3000]{1,2}日）$/;
+
+/** 普通姓名：2–4 汉字，字间可含空格（兼容「李  四」） */
+export const PLAIN_NAME_REGEX =
+    /^(.+?)(?: {2,}|\u3000+)([\u4e00-\u9fa5](?:[ \u3000]*[\u4e00-\u9fa5]){1,3})$/;
+
+/** 少数民族姓名：1–2 个「·」，每段 1–8 汉字 */
+export const ETHNIC_NAME_REGEX =
+    /^(.+?)(?: {2,}|\u3000+)([\u4e00-\u9fa5]{1,8}(?:\u00B7[\u4e00-\u9fa5]{1,8}){1,2})$/;
+
 export const ATTACHMENT_WILDCARDS = "^m附件[0-9]{1,}^p"; // 附件通配符
 export const ATTACHMENT_LIST_REGEX = /[ \u3000]*附件[：:]\s*([\s\S]+?)(?=[\r\n]{2}|\f|$)/g;
 export const ATTACHMENT_LIST_WILDCARDS = "附件[:：]*^p^p";

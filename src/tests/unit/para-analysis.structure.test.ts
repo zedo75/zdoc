@@ -76,6 +76,54 @@ describe("结构分析：完整公文样例", () => {
     });
 });
 
+// ==================== 多行主标题块（标题 + 署名 + 日期 + 文种） ====================
+
+describe("结构分析：多行主标题块", () => {
+    const LINES = [
+        "在XX县“XX工作法”", // 0
+        "培训会上的讲话", // 1
+        "某部部长，某委书记（兼）  李某", // 2
+        "（2026年X月X日）", // 3
+        "（送审稿）", // 4
+        "", // 5
+        "各有关单位：", // 6
+        "",
+        "正文……",
+    ];
+
+    test("整块识别：连续 5 行合为一个块", () => {
+        const doc = new TestDoc(LINES);
+        expect(doc.structure.mainTitleBlocks.length, "块数").toBe(1);
+        const [s, e] = doc.structure.mainTitleBlocks[0];
+        expect(s, "起点").toBe(0);
+        expect(e, "终点").toBe(4);
+    });
+
+    test("主标题 / 署名 / 日期 / 文种各归其位", () => {
+        const doc = new TestDoc(LINES);
+        expect(doc.at(1).kind, "标题首行").toBe("mainTitle");
+        expect(doc.at(2).kind, "标题次行").toBe("mainTitle");
+        expect(doc.at(3).kind, "署名行").toBe("subtitle");
+        expect(doc.at(4).kind, "括号日期").toBe("subtitle");
+        expect(doc.at(5).kind, "文种").toBe("subtitle");
+    });
+
+    test("块后抬头保持 salutation，不被吞", () => {
+        const doc = new TestDoc(LINES);
+        expect(doc.at(7).kind, "抬头").toBe("salutation");
+    });
+});
+
+test("署名行仅 1 个空格 → fallback 为 mainTitle", () => {
+    const doc = new TestDoc([
+        "关于XX工作的通知",
+        "某局局长 张某", // 单空格，PLAIN_NAME_REGEX 拒绝
+        "",
+    ]);
+    expect(doc.at(2).kind, "当前行为").toBe("mainTitle");
+    // 此处记录现状；若后续放宽空格数要求，此断言需同步改
+});
+
 // ==================== 副标题 ====================
 
 describe("结构分析：副标题", () => {

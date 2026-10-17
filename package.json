@@ -36,6 +36,7 @@
         "@vitejs/plugin-vue": "^6.0.9",
         "@vueuse/components": "^15.0.0",
         "@vueuse/core": "^14.4.0",
+        "@wyxin/baijiaxing": "^0.0.4",
         "autoprefixer": "^10.6.1",
         "chinese-number-format": "^2.0.3",
         "diff-match-patch-es": "^2.0.1",

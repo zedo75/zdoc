@@ -3,7 +3,7 @@
  *
  * 设计目标：
  * 1. 纯文本预分析：不依赖 WPS COM，支持 vitest 单测（输入纯字符串）。
- * 2. 结构分析输出语义标签：mainTitle / subtitle / salutation / h1 / h2 / h3 / topic / attachment / signature 等。
+ * 2. 结构分析输出语义标签：mainTitle / subtitle / salutation / h1 / h2 / h3 等。
  * 3. 不做 COM 操作，不做差异对比，不做属性写入——那些属于上层模块。
  */
 import type { SimpleFontConfig, TopicBoldMode } from "@/jsa/types";
@@ -15,12 +15,16 @@ import type {
     SubRangeMod,
 } from "@/utils/para-types";
 
+import { name as SURNAME_ARR } from "@wyxin/baijiaxing";
+
 import {
+    ETHNIC_NAME_REGEX,
     H1_REGEX,
     H2_REGEX,
     H3_REGEX,
     LIST_ITEM_PREFIX_REGEX,
     MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX,
+    PLAIN_NAME_REGEX,
     SALUTATION_EACH_UNIT_REGEX,
     SALUTATION_EXCLUDE_REGEX,
     SALUTATION_GREETING_REGEX,
@@ -28,6 +32,9 @@ import {
     SALUTATION_ORG_DEPT_REGEX,
     SALUTATION_REGEX,
     SIGNATURE_DATE_REGEX,
+    SUBTITLE_BRACKET_DATE_REGEX,
+    SUBTITLE_DOC_NUMBER_REGEX,
+    SUBTITLE_DRAFT_REGEX,
     TOPIC_PREFIX_REGEX,
     TOPIC_REGEX,
 } from "@/utils/para-patterns";
@@ -37,10 +44,13 @@ import {
 /**
  * 判断文本是否符合抬头/主送机关特征。
  *
+ * 先排除黑名单，再按顿号拆成词组、逐词匹配白名单——
+ * 因此 "各省、自治区、直辖市人民政府：" 这类多主体抬头能通过。
+ *
  * @param text 待判断文本
  * @returns 是否符合抬头特征
  */
-export function looksLikeSalutation(text: string): boolean {
+export function isLikelySalutation(text: string): boolean {
     if (SALUTATION_EXCLUDE_REGEX.test(text)) return false;
     const words = text.replace(/\r$/, "").split("、");
     const patterns = [
@@ -57,9 +67,9 @@ export function looksLikeSalutation(text: string): boolean {
  *
  * 第一个句号前分隔符过多说明这是"并列描述"而不是标题，
  * 例如"接到任务后，由甲或乙确定时间、地点、人数需求。"——
- * 前 23 字内已包含多个顿号，不符合标题的简洁特征。
+ * 第一个句号前已包含多个顿号，不符合标题的简洁特征。
  */
-export function isH3Candidate(text: string): boolean {
+export function isLikelyH3(text: string): boolean {
     if (!H3_REGEX.test(text)) return false;
 
     const firstPeriod = text.indexOf("。");
@@ -77,7 +87,7 @@ export function isH3Candidate(text: string): boolean {
  * @param text 待判断文本
  * @returns 是否符合成文日期正则
  */
-export function looksLikeSignatureDate(text: string): boolean {
+export function isLikelySignatureDate(text: string): boolean {
     return SIGNATURE_DATE_REGEX.test(text);
 }
 
@@ -86,16 +96,50 @@ export function looksLikeSignatureDate(text: string): boolean {
 /**
  * 判断文本是否为副标题特征行（单行判断，主标题块内部再提升为 subtitle）。
  *
+ * 命中以下任一即视为副标题行：
+ * - 括号含"稿/案"，如 "（送审稿）"、"（征求意见稿）"
+ * - 公文文号，如 "（某委〔2026〕1号）"
+ * - 括号日期（支持 X/空格占位），如 "（2024年X月X日）"
+ * - 以破折号 "——" 开头（引题/副题）
+ *
  * @param text 段落文本
  */
-export function isSubtitleLine(text: string): boolean {
+export function isLikelySubtitleLine(text: string): boolean {
     const t = text.trim();
-    // 匹配中文括号内容，且包含"稿"或"案"，或者破折号开头
     return (
-        /^（[^）]*[稿案][^）]*）$/.test(t) ||
-        /^[^\s]{2,5}\u3014\d{4}\u3015\d+号$/.test(t) ||
+        SUBTITLE_DRAFT_REGEX.test(t) ||
+        SUBTITLE_DOC_NUMBER_REGEX.test(t) ||
+        SUBTITLE_BRACKET_DATE_REGEX.test(t) ||
         t.startsWith("——")
     );
+}
+
+const SURNAME_SET = new Set(SURNAME_ARR as unknown as string[]);
+
+/**
+ * 判断文本是否为"署名"（职务 + 姓名）。
+ *
+ * 规则：
+ * - 以 。；！？ 结尾 → 直接排除（避免正文句子误命中）；
+ * - 普通姓名：末尾 2+ 空格（半角/全角）后跟 2-4 汉字，首字过百家姓；
+ * - 少数民族姓名：包含 "·"，不限 4 字。
+ */
+export function isLikelyByline(text: string): boolean {
+    const t = text.trim();
+    // 排除空串和以句号 / 分号 / 感叹 / 问号结尾的正文句子
+    if (!t || /[。；！？]$/.test(t)) return false;
+
+    // 普通姓名（2–4 字），走姓氏字典
+    const plainMatch = t.match(PLAIN_NAME_REGEX);
+    if (plainMatch) {
+        const namePart = plainMatch[2].replace(/[\s\u3000]/g, "");
+        if (SURNAME_SET.has(namePart[0])) return true;
+    }
+
+    // 含「·」的少数民族姓名，强特征直接通过
+    if (ETHNIC_NAME_REGEX.test(t)) return true;
+
+    return false;
 }
 
 // =========================================================================
@@ -205,14 +249,14 @@ function classifyPara(
     }
 
     // 抬头
-    if (SALUTATION_REGEX.test(text) && looksLikeSalutation(text)) {
+    if (SALUTATION_REGEX.test(text) && isLikelySalutation(text)) {
         kinds.add("salutation");
     }
 
     // 层级标题（每段最多匹配一个）
     if (H1_REGEX.test(text)) kinds.add("h1");
     else if (H2_REGEX.test(text)) kinds.add("h2");
-    else if (isH3Candidate(text) && !prevIsListItem) {
+    else if (isLikelyH3(text) && !prevIsListItem) {
         kinds.add("h3");
     } else if (LIST_ITEM_PREFIX_REGEX.test(text)) {
         // 以"数字."开头、但不是 h3 → 列表项
@@ -220,7 +264,7 @@ function classifyPara(
     }
 
     // 副标题（单行判断，主标题块内部再提升为 subtitle）
-    const isSubtitle = isSubtitleLine(text);
+    const isSubtitle = isLikelySubtitleLine(text);
 
     // 段内 topic
     TOPIC_REGEX.lastIndex = 0;
@@ -260,10 +304,13 @@ function classifyPara(
  *
  * - 候选起点：文档首非空、附件后、换页符后（可扩展抬头上方）
  * - 向后扩展直到遇空行、层级标题、禁止符号、附件或范围外
- * - 块后必须跟空行（或文档末尾，此处强制必须）
+ * - 块后必须跟空行；若一直延伸到文档末尾而无空行，该块被丢弃
  * - 附件段落自身不会被选为候选，也不会被包含在块内
+ *
+ * @param paraInfos 应传入分析阶段的 `StructuredParaInfo[]`；
+ *   若传 `PlainParaInfo[]`（`isHeading` 恒 false），层级标题会可能被误纳入标题块。
  */
-export function findMainTitleBlocks(paraInfos: BaseParaInfo[]): [number, number][] {
+export function findMainTitleBlocks(paraInfos: StructuredParaInfo[]): [number, number][] {
     const n = paraInfos.length;
     const blocks: [number, number][] = [];
     const candidates = new Set<number>();
@@ -310,8 +357,6 @@ export function findMainTitleBlocks(paraInfos: BaseParaInfo[]): [number, number]
             }
         }
     });
-
-    // 抬头上方可扩展（暂略）-----
 
     // 从候选生成块
     const sorted = Array.from(candidates).sort((a, b) => a - b);
@@ -426,7 +471,7 @@ export function analyzeDocumentStructure(
                 continue;
             }
             p.semanticKinds.delete("body");
-            if (p.isSubtitleLine) {
+            if (p.isSubtitleLine || isLikelyByline(p.text)) {
                 p.semanticKinds.add("subtitle");
                 p.primaryKind = "subtitle";
             } else {
@@ -442,7 +487,7 @@ export function analyzeDocumentStructure(
     if (isFullDoc) {
         for (let i = 0; i < paragraphs.length; i++) {
             const p = paragraphs[i];
-            if (!looksLikeSignatureDate(p.text)) continue;
+            if (!isLikelySignatureDate(p.text)) continue;
 
             const MAX_UNIT_LINES = 5; // 联合发文一般最多 3-4 家
             // 从日期往前扫描，收集所有非空段落作为单位行，

@@ -1,19 +1,21 @@
 import {
     computeTopicBoldRanges,
-    looksLikeSalutation,
-    looksLikeSignatureDate,
+    isLikelyByline,
+    isLikelySalutation,
+    isLikelySignatureDate,
+    isLikelySubtitleLine,
 } from "@/utils/para-analysis";
 
 // ==================== 抬头判定 ====================
 
-describe("looksLikeSalutation 抬头判定", () => {
+describe("isLikelySubtitleLine 抬头判定", () => {
     test.each([
         ["各省、自治区、直辖市人民政府：\r", true, "典型政府机关抬头"],
         ["各单位、各部门：\r", true, "「各X单位」形式"],
         ["尊敬的各位领导：\r", true, "敬语开头"],
         ["党委书记、各位主任：\r", true, "职务名称开头"],
     ])("%j → %s（%s）", (text, expected) => {
-        expect(looksLikeSalutation(text), `「${text.trim()}」`).toBe(expected);
+        expect(isLikelySalutation(text), `「${text.trim()}」`).toBe(expected);
     });
 
     test.each([
@@ -21,25 +23,93 @@ describe("looksLikeSalutation 抬头判定", () => {
         ["根据XXX规定。：\r", "命中排除词「根据」"],
         ["大家好：\r", "无白名单关键词"],
     ])("%j → false（%s）", (text) => {
-        expect(looksLikeSalutation(text), `「${text.trim()}」不应识别为抬头`).toBe(false);
+        expect(isLikelySalutation(text), `「${text.trim()}」不应识别为抬头`).toBe(false);
+    });
+});
+
+describe("isLikelySubtitleLine 副标题行判定", () => {
+    test.each([
+        ["（送审稿）", "括号含「稿」"],
+        ["（征求意见稿）", "括号含「稿」多字"],
+        ["（修正案）", "括号含「案」"],
+        ["（某委〔2026〕1号）", "带括号的文号"],
+        ["（2024年X月X日）", "括号日期，X 占位"],
+        ["（2024年 月 日）", "括号日期，空格占位"],
+        ["—— 关于XX的若干意见", "破折号开头"],
+    ])("%j → true（%s）", (text, _desc) => {
+        expect(isLikelySubtitleLine(text), `「${text}」`).toBe(true);
+    });
+
+    test.each([
+        ["某委〔2026〕1号", "裸文号（无括号）不应命中"],
+        ["关于某委〔2026〕1号的通知", "正文中出现的文号"],
+        ["（2024年度总结）", "括号内含「度」但非稿/案"],
+        ["2024年X月X日", "无括号的日期"],
+    ])("%j → false（%s）", (text, _desc) => {
+        expect(isLikelySubtitleLine(text), `「${text}」不应识别为副标题`).toBe(false);
+    });
+});
+
+describe("isLikelyByline 署名行判定", () => {
+    test.each([
+        ["某局局长  张三", true, "职务 + 双空格 + 常见姓氏"],
+        ["县委常委、组织部部长  王五", true, "多段职务 + 常见姓氏"],
+        ["某部门负责人  李  四", true, "两字名中间加空格"],
+        ["某公司经理　　刘六", true, "全角空格分隔"],
+        ["某组长  阿不都热依木·买买提", true, "少数民族姓名（含 ·）"],
+        ["某长  赵  七", true, "姓氏 + 名字间空格 + 单字"],
+    ])("%j → %s（%s）", (text, expected, _desc) => {
+        expect(isLikelyByline(text), `「${text.trim()}」`).toBe(expected);
+    });
+
+    test.each([
+        ["", "空串"],
+        ["局长张三", "无分隔空格"],
+        ["局长 张三", "仅 1 个空格（<2）"],
+        ["局长  张三。", "末尾句号"],
+        ["局长  张三；", "末尾分号"],
+        ["局长  张三！", "末尾感叹号"],
+        ["局长  张三？", "末尾问号"],
+        ["通知内容  详见附件", "格式命中但「详」非姓氏"],
+        ["局长  张三和李四", "姓名超长（5 字 > 4 字上限）"],
+    ])("%j → false（%s）", (text, _desc) => {
+        expect(isLikelyByline(text), `「${text.trim()}」不应识别为署名行`).toBe(false);
+    });
+
+    test("姓名上限边界：4 字命中，5 字不命中", () => {
+        const ok = "某长  " + "赵".repeat(4);
+        const bad = "某长  " + "赵".repeat(5);
+        expect(isLikelyByline(ok), "4 字姓名").toBe(true);
+        expect(isLikelyByline(bad), "5 字姓名").toBe(false);
+    });
+
+    test("首字非姓氏 + 含 · → 仍判为署名（少数民族姓名分支）", () => {
+        // 「买」是否在 chinese-surnames 里不保证，但含 · 应走第三层兜底
+        const text = "某长  买买提·吐尔逊";
+        expect(isLikelyByline(text), `「${text}」`).toBe(true);
+    });
+
+    test("首字非姓氏 + 不含 · → 不判为署名", () => {
+        const text = "通知内容  详附件";
+        expect(isLikelyByline(text), `「${text}」`).toBe(false);
     });
 });
 
 // ==================== 落款日期判定 ====================
 
-describe("looksLikeSignatureDate 落款日期判定", () => {
+describe("isLikelySignatureDate 落款日期判定", () => {
     test.each([
         ["2025年8月24日\r", "标准日期"],
         ["2025年8月 5日\r", "日期内 1 个空格"],
         ["2025年 8月5日\r", "月份前 1 个空格"],
         ["XXXX年XX月XX日\r", "占位日期"],
     ])("%j → true（%s）", (text, _desc) => {
-        expect(looksLikeSignatureDate(text), `「${text.trim()}」`).toBe(true);
+        expect(isLikelySignatureDate(text), `「${text.trim()}」`).toBe(true);
     });
 
     test("带前缀时不应识别为落款日期", () => {
         const text = "成文日期：2025年8月24日\r";
-        expect(looksLikeSignatureDate(text), `「${text.trim()}」不应识别`).toBe(false);
+        expect(isLikelySignatureDate(text), `「${text.trim()}」不应识别`).toBe(false);
     });
 });
 
