@@ -16,11 +16,11 @@ import type {
 } from "@/utils/para-types";
 
 import {
-    FORBIDDEN_SYMBOLS_REGEX,
     H1_REGEX,
     H2_REGEX,
     H3_REGEX,
     LIST_ITEM_PREFIX_REGEX,
+    MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX,
     SALUTATION_EACH_UNIT_REGEX,
     SALUTATION_EXCLUDE_REGEX,
     SALUTATION_GREETING_REGEX,
@@ -131,7 +131,7 @@ export function parsePlainTextToParas(raw: string): BaseParaInfo[] {
             isEmpty: trimmed === "",
             isAttachment: /^附件\s*[0-9]+/.test(trimmed),
             hasFormFeed: text.includes("\f"),
-            hasForbidden: FORBIDDEN_SYMBOLS_REGEX.test(trimmed),
+            hasForbidden: MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX.test(trimmed),
             isHeading: false, // 后续 analyze 阶段填
             isInRange: true,
             isTable,

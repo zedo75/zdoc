@@ -23,7 +23,7 @@ import type {
 
 import { analyzeDocumentStructure, parsePlainTextToParas } from "@/utils/para-analysis";
 import { ATTR_BY_KEY, computeModifications } from "@/utils/para-attributes";
-import { FORBIDDEN_SYMBOLS_REGEX } from "@/utils/para-patterns";
+import { MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX } from "@/utils/para-patterns";
 
 // ==================== 书签跳过区间 ====================
 
@@ -96,7 +96,7 @@ export function parseParagraphs(doc: Wps.Document): ParaInfo[] {
         const isEmpty = trimmed === "";
         const isAttachment = /^附件\s*[0-9]+/.test(trimmed);
         const hasFormFeed = text.includes("\f");
-        const hasForbidden = FORBIDDEN_SYMBOLS_REGEX.test(trimmed);
+        const hasForbidden = MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX.test(trimmed);
         const isTable = text.includes("\x07");
 
         const currentStyleName = style?.NameLocal ?? "";

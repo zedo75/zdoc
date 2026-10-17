@@ -40,8 +40,10 @@ export const TOPIC_PREFIX_REGEX = /^[一二三四五六七八九十][是要]/;
 /** 段落是否以"数字."开头（与 H3_REGEX 的前缀一致） */
 export const LIST_ITEM_PREFIX_REGEX = /^[0-9]{1,2}\./;
 
-// 标题中禁止出现的符号
-export const FORBIDDEN_SYMBOLS_REGEX = /[。；！？【】〖〗_=|{}<>#&~$^*※\[\]\\]/;
+/**
+ * 主标题（公文标题）中禁止出现的符号。
+ */
+export const MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX = /[。；！？【】〖〗_=|{}<>#&~$^*※\[\]\\]/;
 export const ATTACHMENT_WILDCARDS = "^m附件[0-9]{1,}^p"; // 附件通配符
 export const ATTACHMENT_LIST_REGEX = /[ \u3000]*附件[：:]\s*([\s\S]+?)(?=[\r\n]{2}|\f|$)/g;
 export const ATTACHMENT_LIST_WILDCARDS = "附件[:：]*^p^p";
@@ -57,4 +59,10 @@ export const SALUTATION_JOB_TITLE_REGEX = /副?书记|副?主任|副?参谋长|�
 
 // ==================== 落款 ====================
 
-export const SIGNATURE_DATE_REGEX = /^\s*[0-9X]{4}年[0-9 X]{1,2}月[0-9 X]{1,2}日\s*\r?$/;
+/**
+ * 落款日期
+ *
+ * 月、日之前可以用大小写的 "X"、全半角的空格占位
+ */
+export const SIGNATURE_DATE_REGEX =
+    /^\s*[0-9xX]{4}年[0-9xX \u3000]{1,2}月[0-9xX \u3000]{1,2}日\s*\r?$/;
