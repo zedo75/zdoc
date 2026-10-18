@@ -496,6 +496,9 @@ export function analyzeDocumentStructure(
             const unitIndices: number[] = [];
             let prev = i - 1;
             while (prev >= 0 && !paragraphs[prev].isEmpty && unitIndices.length < MAX_UNIT_LINES) {
+                const p = paragraphs[prev];
+                // 防御：若段落以句末标点结尾，则视为正文，不是发文机关，停止向上收集
+                if (/[。！？；]$/.test(p.text.trim())) break;
                 unitIndices.unshift(prev);
                 prev--;
             }

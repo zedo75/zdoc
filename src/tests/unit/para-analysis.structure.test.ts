@@ -76,6 +76,56 @@ describe("结构分析：完整公文样例", () => {
     });
 });
 
+describe("结构分析：落款单位行扫描防御", () => {
+    test("标准格式（有空行）：正文末段不被纳入单位行", () => {
+        const doc = new TestDoc([
+            "……请各单位抓好落实。",
+            "",
+            "XX省人民政府办公厅",
+            "2025年3月15日",
+        ]);
+        const sigs = doc.signatures();
+        expect(sigs.length, "落款组数").toBe(1);
+        expect(sigs[0].units.length, "单位行数").toBe(1);
+        expect(sigs[0].units[0].text, "单位文本").toBe("XX省人民政府办公厅");
+    });
+
+    test("不规范（无空行）+ 句号结尾：正文末段被排除", () => {
+        const doc = new TestDoc(["……请各单位抓好落实。", "XX省人民政府办公厅", "2025年3月15日"]);
+        const sigs = doc.signatures();
+        expect(sigs.length, "落款组数").toBe(1);
+        expect(sigs[0].units.length, "单位行数").toBe(1);
+        expect(sigs[0].units[0].text, "单位文本").toBe("XX省人民政府办公厅");
+    });
+
+    test("不规范（无空行）+ 联合发文多单位：仅正文末段被排除", () => {
+        const doc = new TestDoc([
+            "……请各单位抓好落实。",
+            "XX省人民政府办公厅",
+            "XX省教育厅",
+            "2025年3月15日",
+        ]);
+        const sigs = doc.signatures();
+        expect(sigs[0].units.length, "单位行数").toBe(2);
+        expect(
+            sigs[0].units.map((u) => u.text),
+            "单位行文本顺序",
+        ).toEqual(["XX省人民政府办公厅", "XX省教育厅"]);
+    });
+
+    test("已知限制：正文末段漏句末标点时，会被一并纳入单位行", () => {
+        const doc = new TestDoc([
+            "……请各单位抓好落实", // 漏句号
+            "XX省人民政府办公厅",
+            "2025年3月15日",
+        ]);
+        const sigs = doc.signatures();
+        // 当前实现：正文末段无句末标点，无法与发文机关区分，会被一并纳入
+        // 若未来引入更细的判定（如单位行须以"委员会/办公室/局/厅"等结尾），此断言需更新
+        expect(sigs[0].units.length, "当前行为：2（含正文末段）").toBe(2);
+    });
+});
+
 // ==================== 多行主标题块（标题 + 署名 + 日期 + 文种） ====================
 
 describe("结构分析：多行主标题块", () => {
