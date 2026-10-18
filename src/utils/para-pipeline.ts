@@ -21,9 +21,12 @@ import type {
     SkipRange,
 } from "@/utils/para-types";
 
-import { analyzeDocumentStructure, parsePlainTextToParas } from "@/utils/para-analysis";
+import {
+    analyzeDocumentStructure,
+    computePlainParaInfo,
+    parsePlainTextToParas,
+} from "@/utils/para-analysis";
 import { ATTR_BY_KEY, computeModifications } from "@/utils/para-attributes";
-import { MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX } from "@/utils/para-patterns";
 
 // ==================== 书签跳过区间 ====================
 
@@ -92,37 +95,20 @@ export function readParaInfos(doc: Wps.Document): ComParaInfo[] {
         const text = rng.Text;
         const style = rng.Style as Wps.Style | null; // 行结束标记段落 "\r\x07" 的 Style 为 null
 
-        const trimmed = text.trim();
-        const isEmpty = trimmed === "";
-        const isAttachment = /^附件\s*[0-9]+/.test(trimmed);
-        const hasFormFeed = text.includes("\f");
-        const hasForbidden = MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX.test(trimmed);
-        const isTable = text.includes("\x07");
+        const info = computePlainParaInfo(text);
 
         const currentStyleName = style?.NameLocal ?? "";
 
         // 跳过策略：表格 / 用户手动标记样式 / zdoc_* 书签覆盖
         // 只在确实存在跳过书签时，才需要段落起止位置
-        let isSkipped = isTable || currentStyleName === SKIP_STYLE_NAME;
+        let isSkipped = info.isTable || currentStyleName === SKIP_STYLE_NAME;
         if (!isSkipped && skipRanges.length > 0) {
             const start = rng.Start as number;
             const end = rng.End as number;
             isSkipped = overlapsSkipRange(start, end, skipRanges);
         }
 
-        result.push({
-            index: i,
-            text,
-            isEmpty,
-            isAttachment,
-            hasFormFeed,
-            hasForbidden,
-            isHeading: false, // 稍后在 analyzeDocumentStructure 中重新计算
-            isInRange: true,
-            isTable,
-            isSkipped,
-            currentStyleName,
-        });
+        result.push({ ...info, index: i, isSkipped, currentStyleName });
     }
 
     return result;

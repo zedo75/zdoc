@@ -126,29 +126,9 @@ export interface FooterConfig {
     position: PagenumPosition;
 }
 
-/**
- * 页眉/页脚整体配置
- * 组合了头部内容和页码的完整配置项
- */
-export interface HeaderFooterConfig {
-    /** 页眉/页脚内容配置 */
-    header: HeaderConfig;
-    /** 页码配置 */
-    pagenum: FooterConfig;
-}
-
 export interface GovDocConfig {
     pageLayout: PageLayoutConfig;
     typography: TypographyConfig;
     header: HeaderConfig;
     footer: FooterConfig;
-}
-
-export interface ParaInfo {
-    index: number; // 段落序号（1-based）
-    isEmpty: boolean; // 是否空行（trim 后为空）
-    isSubtitle: boolean; // 匹配副标题特征（稿、——、双空格、文号）
-    isAttachmentLabel: boolean; // 匹配 "附件X" 开头
-    isHeading: boolean; // 匹配层级标题（一、 （一） 1.）
-    hasForbidden: boolean; // 是否包含禁止符号
 }

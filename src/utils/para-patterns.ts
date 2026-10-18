@@ -108,6 +108,8 @@ export const PLAIN_NAME_REGEX =
 export const ETHNIC_NAME_REGEX =
     /^(.+?)(?: {2,}|\u3000+)([\u4e00-\u9fa5]{1,8}(?:\u00B7[\u4e00-\u9fa5]{1,8}){1,2})$/;
 
+// ==================== 附件相关 ====================
+
 /** 单个附件行的 WPS 查找模式：分页符 + "附件X" + 段落标记 */
 export const ATTACHMENT_WILDCARDS_PATTERN = "^m附件[0-9]{1,}^p";
 
@@ -121,6 +123,12 @@ export const ATTACHMENT_LIST_REGEX = /[ \u3000]*附件[：:]\s*([\s\S]+?)(?=[\r\
 
 /** 附件说明块结尾的 WPS 查找模式：定位 "附件：…" 后跟两个段落标记的位置 */
 export const ATTACHMENT_LIST_WILDCARDS_PATTERN = "附件[:：]*^p^p";
+
+/** 附件段落前缀：附件 1 / 附件2 等
+ *
+ * （注意：与 ATTACHMENT_LIST_REGEX 的"附件：目录"不同）
+ */
+export const ATTACHMENT_LINE_PREFIX_REGEX = /^附件\s*[0-9]+/;
 
 // ==================== 抬头相关 ====================
 

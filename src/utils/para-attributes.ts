@@ -278,7 +278,7 @@ export function computeModifications(
     for (const p of paras) {
         if (shouldSkipPara(p)) continue;
 
-        const mod: ParaModification = { index: p.index, _kind: p.primaryKind };
+        const mod: ParaModification = { index: p.index };
         let changed = false;
 
         // ── 第一步：判定 style 是否会变 ──

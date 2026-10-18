@@ -199,10 +199,6 @@ export interface ParaAttrValues {
 export interface ParaModification extends Partial<ParaAttrValues> {
     /** 1-based 段落序号（与 WPS `Paragraphs.Item` 对齐） */
     index: number;
-    /** 调试用：段落语义类别，不参与执行 */
-    _kind?: ParagraphSemanticKind;
-    /** 调试用：修改原因，不参与执行 */
-    _reason?: string;
 }
 
 // ==================== 期望上下文 ====================

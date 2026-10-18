@@ -18,6 +18,7 @@ import type {
 import { name as SURNAME_ARR } from "@wyxin/baijiaxing";
 
 import {
+    ATTACHMENT_LINE_PREFIX_REGEX,
     ETHNIC_NAME_REGEX,
     H1_REGEX,
     H2_REGEX,
@@ -168,21 +169,36 @@ export function parsePlainTextToParas(raw: string): PlainParaInfo[] {
     }
 
     return paras.map((text) => {
-        const trimmed = text.trim();
-        const isTable = text.includes("\x07");
+        const info = computePlainParaInfo(text);
         return {
-            text,
-            isEmpty: trimmed === "",
-            isAttachment: /^附件\s*[0-9]+/.test(trimmed),
-            hasFormFeed: text.includes("\f"),
-            hasForbidden: MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX.test(trimmed),
-            isHeading: false, // 后续 analyze 阶段填
-            isInRange: true,
-            isTable,
-            // 纯文本层没有书签/样式信息，只有表格能触发跳过
-            isSkipped: isTable,
+            ...info,
+            isSkipped: info.isTable, // 纯文本层没有书签/样式信息，只有表格能触发跳过
         };
     });
+}
+
+/**
+ * 从段落文本计算基础事实字段。
+ *
+ * 返回 `PlainParaInfo` 中除 `isSkipped` 外的所有字段：
+ * - 从 `text` 派生的 5 个 flag；
+ * - `text` 本身；
+ * - 占位默认值 `isHeading: false`、`isInRange: true`（由后续分析阶段改写）。
+ *
+ * `isSkipped` 由调用方决定：纯文本层 = `isTable`，COM 层还需叠加样式与书签。
+ */
+export function computePlainParaInfo(text: string): Omit<PlainParaInfo, "isSkipped"> {
+    const trimmed = text.trim();
+    return {
+        text,
+        isEmpty: trimmed === "",
+        isAttachment: ATTACHMENT_LINE_PREFIX_REGEX.test(trimmed),
+        hasFormFeed: text.includes("\f"),
+        hasForbidden: MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX.test(trimmed),
+        isTable: text.includes("\x07"),
+        isHeading: false, // 由 analyze 阶段填
+        isInRange: true,
+    };
 }
 
 // =========================================================================
