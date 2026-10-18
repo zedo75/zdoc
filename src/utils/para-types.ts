@@ -12,7 +12,7 @@
  * 这里的字段都是"COM 读取 / 纯文本解析"能直接得到的**客观事实**，
  * 不包含任何业务策略（如"跳过"由 `isSkipped` 单独承载）。
  */
-export interface BaseParaInfo {
+export interface PlainParaInfo {
     /** 段落文本（含尾部的 `\r`，与 WPS `Range.Text` 一致） */
     text: string;
     /** 是否为空段落 */
@@ -46,7 +46,7 @@ export interface BaseParaInfo {
 /**
  * COM 读取到的段落信息（含 1-based 索引与样式名）。
  */
-export interface ParaInfo extends BaseParaInfo {
+export interface ComParaInfo extends PlainParaInfo {
     /** 1-based（WPS `Paragraphs.Item` 序号从 1 开始） */
     index: number;
     /** 当前段落样式名（COM: `Range.Style.NameLocal`） */
@@ -116,7 +116,7 @@ export interface SubRangeMod {
 /**
  * 结构化段落信息（分析阶段产出）。
  */
-export interface StructuredParaInfo extends BaseParaInfo {
+export interface StructuredParaInfo extends PlainParaInfo {
     /** 1-based 段落序号 */
     index: number;
     /** 段落命中的语义类别集合；可能多种，如一段既是 h3 又含 topic 子句 */

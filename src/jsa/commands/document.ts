@@ -1,7 +1,7 @@
 import type { PageLayoutConfig } from "@/jsa/types";
 
 import { DEFAULT_PAGE_LAYOUT_CONFIG } from "@/config/defaults";
-import { ATTACHMENT_LIST_REGEX, ATTACHMENT_LIST_WILDCARDS } from "@/utils/para-patterns";
+import { ATTACHMENT_LIST_REGEX, ATTACHMENT_LIST_WILDCARDS_PATTERN } from "@/utils/para-patterns";
 import { handleAttachments } from "@/utils/typo";
 
 /**
@@ -156,7 +156,7 @@ export function getAttachmentsRangesIndex(doc: Wps.Document = ActiveDocument): R
     const find = rng.Find;
     find.ClearFormatting();
     // 对应正则表达式 attachmentList
-    find.Text = ATTACHMENT_LIST_WILDCARDS; // 这里只找“附件”开头到结尾，^p 只用于定位
+    find.Text = ATTACHMENT_LIST_WILDCARDS_PATTERN; // 这里只找“附件”开头到结尾，^p 只用于定位
     find.MatchCase = false; // 不区分大小写
     find.MatchWildcards = true; // 使用通配符
 

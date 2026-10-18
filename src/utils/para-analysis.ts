@@ -8,9 +8,9 @@
  */
 import type { SimpleFontConfig, TopicBoldMode } from "@/jsa/types";
 import type {
-    BaseParaInfo,
     DocumentStructure,
     ParagraphSemanticKind,
+    PlainParaInfo,
     StructuredParaInfo,
     SubRangeMod,
 } from "@/utils/para-types";
@@ -143,11 +143,11 @@ export function isLikelyByline(text: string): boolean {
 }
 
 // =========================================================================
-// 第一阶段：解析（纯文本 → BaseParaInfo[]）
+// 第一阶段：解析（纯文本 → PlainParaInfo[]）
 // =========================================================================
 
 /**
- * 将纯文本按段落切分，并转换为 `BaseParaInfo[]`。
+ * 将纯文本按段落切分，并转换为 `PlainParaInfo[]`。
  *
  * @param raw 原始纯文本，支持 `\n`、`\r\n`、`\r` 换行
  * @returns 段落信息数组；每段 `text` 末尾都会补 `\r`，与 WPS `Range.Text` 保持一致
@@ -155,7 +155,7 @@ export function isLikelyByline(text: string): boolean {
  * - 输入会先统一换行为 `\r`；
  * - 以 `\r` 拆分后，最后一段空段会被过滤（输入只有 `\r` 的边界情况除外）。
  */
-export function parsePlainTextToParas(raw: string): BaseParaInfo[] {
+export function parsePlainTextToParas(raw: string): PlainParaInfo[] {
     // 统一换行：Word 内部用 \r，输入的 \n 也要转为 \r 行为一致
     const normalized = raw.replace(/\r\n|\r|\n/g, "\r");
     // 以 \r 拆分，但保留每个段尾的 \r（最后一段如果没有 \r 也要补上，便于后续正则一致）
@@ -186,7 +186,7 @@ export function parsePlainTextToParas(raw: string): BaseParaInfo[] {
 }
 
 // =========================================================================
-// 第二阶段：结构分析（BaseParaInfo[] → DocumentStructure）
+// 第二阶段：结构分析（PlainParaInfo[] → DocumentStructure）
 // =========================================================================
 
 /**
@@ -195,7 +195,7 @@ export function parsePlainTextToParas(raw: string): BaseParaInfo[] {
  * @param text 段落文本
  * @returns 段内子范围匹配列表
  */
-function matchSubMatches(text: string): StructuredParaInfo["subMatches"] {
+function findTopicMatches(text: string): StructuredParaInfo["subMatches"] {
     const result: StructuredParaInfo["subMatches"] = [];
 
     // topic 小标题（整段内可有多个）
@@ -223,7 +223,7 @@ function matchSubMatches(text: string): StructuredParaInfo["subMatches"] {
  * 不处理主标题块、落款等需要全局上下文的判断。
  */
 function classifyPara(
-    info: BaseParaInfo,
+    info: PlainParaInfo,
     prevIsListItem: boolean,
 ): {
     kinds: Set<ParagraphSemanticKind>;
@@ -417,22 +417,22 @@ export function findMainTitleBlocks(paraInfos: StructuredParaInfo[]): [number, n
 /**
  * 核心分析函数：输入段落信息，输出文档结构分析结果。
  *
- * @param baseInfos 段落信息；`index` 应为 0-based 数组下标，`isHeading` 会被覆盖重算
+ * @param paraInfos 段落信息；按数组下标（0-based）遍历，输出的 `index` 会置为 1-based
  * @param isFullDoc 是否为全文排版；`false` 时跳过主标题、落款等需要全局上下文的判断
  * @returns 文档结构分析结果
  *
  * 不做任何 COM 操作，纯 JS，可测试。输入可来自纯文本或 WPS COM 读取。
  */
 export function analyzeDocumentStructure(
-    baseInfos: BaseParaInfo[],
+    paraInfos: PlainParaInfo[],
     isFullDoc: boolean = true,
 ): DocumentStructure {
     // 1. 初步逐段分类
     const paragraphs: StructuredParaInfo[] = [];
     let prevIsListItem = false; // 状态沿段落序列传递
 
-    for (let idx = 0; idx < baseInfos.length; idx++) {
-        const info = baseInfos[idx];
+    for (let idx = 0; idx < paraInfos.length; idx++) {
+        const info = paraInfos[idx];
         const { kinds, primary, isSubtitleLine } = classifyPara(info, prevIsListItem);
         const isHeading = kinds.has("h1") || kinds.has("h2") || kinds.has("h3");
 
@@ -441,7 +441,7 @@ export function analyzeDocumentStructure(
             index: idx + 1,
             semanticKinds: kinds,
             primaryKind: primary,
-            subMatches: kinds.has("topic") ? matchSubMatches(info.text) : [],
+            subMatches: kinds.has("topic") ? findTopicMatches(info.text) : [],
             isHeading,
             isSubtitleLine,
         });

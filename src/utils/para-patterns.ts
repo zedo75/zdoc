@@ -65,9 +65,9 @@ export const PLAIN_NAME_REGEX =
 export const ETHNIC_NAME_REGEX =
     /^(.+?)(?: {2,}|\u3000+)([\u4e00-\u9fa5]{1,8}(?:\u00B7[\u4e00-\u9fa5]{1,8}){1,2})$/;
 
-export const ATTACHMENT_WILDCARDS = "^m附件[0-9]{1,}^p"; // 附件通配符
+export const ATTACHMENT_WILDCARDS_PATTERN = "^m附件[0-9]{1,}^p"; // 附件通配符
 export const ATTACHMENT_LIST_REGEX = /[ \u3000]*附件[：:]\s*([\s\S]+?)(?=[\r\n]{2}|\f|$)/g;
-export const ATTACHMENT_LIST_WILDCARDS = "附件[:：]*^p^p";
+export const ATTACHMENT_LIST_WILDCARDS_PATTERN = "附件[:：]*^p^p";
 
 // ==================== 抬头相关 ====================
 

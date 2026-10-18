@@ -13,10 +13,10 @@
 import type { TypographyConfig } from "@/jsa/types";
 import type { SnapshotReader } from "@/utils/para-attributes";
 import type {
+    ComParaInfo,
     DesiredCtx,
     DocumentStructure,
     ParaAttrValues,
-    ParaInfo,
     ParaModification,
     SkipRange,
 } from "@/utils/para-types";
@@ -65,7 +65,7 @@ export function collectSkipRanges(doc: Wps.Document): SkipRange[] {
  * @param end 段落结束字符位置
  * @param ranges 跳过区间列表
  */
-export function isCovered(start: number, end: number, ranges: SkipRange[]): boolean {
+export function overlapsSkipRange(start: number, end: number, ranges: SkipRange[]): boolean {
     for (const s of ranges) {
         if (start < s.end && end > s.start) return true;
     }
@@ -75,12 +75,12 @@ export function isCovered(start: number, end: number, ranges: SkipRange[]): bool
 // ==================== 读取器 ====================
 
 /**
- * 读取器（只读 Text 和 Style.NameLocal，每段 2 次 COM 调用；另加 0~2 次书签/形状检测）。
+ * 读取器：逐段读 Text / Style.NameLocal，并在存在跳过书签时读 Start / End。
  */
-export function parseParagraphs(doc: Wps.Document): ParaInfo[] {
+export function readParaInfos(doc: Wps.Document): ComParaInfo[] {
     const paras = doc.Paragraphs;
     const count = paras.Count;
-    const result: ParaInfo[] = [];
+    const result: ComParaInfo[] = [];
 
     // 一次性扫描书签，建立跳过区间表（纯 JS，无 COM 调用）
     const skipRanges = collectSkipRanges(doc);
@@ -107,7 +107,7 @@ export function parseParagraphs(doc: Wps.Document): ParaInfo[] {
         if (!isSkipped && skipRanges.length > 0) {
             const start = rng.Start as number;
             const end = rng.End as number;
-            isSkipped = isCovered(start, end, skipRanges);
+            isSkipped = overlapsSkipRange(start, end, skipRanges);
         }
 
         result.push({
@@ -125,7 +125,6 @@ export function parseParagraphs(doc: Wps.Document): ParaInfo[] {
         });
     }
 
-    console.table(result);
     return result;
 }
 
@@ -141,7 +140,7 @@ export function makeComReader(
     const rangeCache = new Map<number, Wps.Range>();
     return {
         read(idx1: number, key: keyof ParaAttrValues): unknown {
-            // 已从 parseParagraphs 拿到的 style 直接复用，不重复 COM 读
+            // 已从 readParaInfos 拿到的 style 直接复用，不重复 COM 读
             if (key === "style" && knownStyles?.has(idx1)) {
                 return knownStyles.get(idx1);
             }
@@ -161,7 +160,7 @@ export function makeComReader(
 /**
  * 分析文档结构并返回修改指令。
  *
- * @param infos 段落信息（来自 `parseParagraphs`）
+ * @param infos 段落信息（来自 `readParaInfos`）
  * @param config 排版配置
  * @param isFullDoc 是否为全文排版
  * @param mainStyleName 实际运行时的"公文正文"样式名
@@ -174,7 +173,7 @@ export function makeComReader(
  * 返回 `structure` 是为了让调用方（如 `formatSignature`）复用已识别的位置，避免二次扫描全文。
  */
 export function analyzeDocument(
-    infos: ParaInfo[],
+    infos: ComParaInfo[],
     config: TypographyConfig,
     isFullDoc: boolean,
     mainStyleName: string,
@@ -192,7 +191,7 @@ export function analyzeDocument(
     //    - 有 doc → 用 COM reader 做差异检测
     let reader: SnapshotReader | undefined;
     if (doc) {
-        // 收集 parseParagraphs 已知的 style 名
+        // 收集 readParaInfos 已知的 style 名
         const knownStyles = new Map<number, string>();
         for (const info of infos) {
             if (info.currentStyleName) knownStyles.set(info.index, info.currentStyleName);
@@ -231,8 +230,8 @@ export function analyzePlainText(
         mainStyleName: "公文正文",
         titleStyleName: "公文标题",
     };
-    const baseInfos = parsePlainTextToParas(text);
-    const structure = analyzeDocumentStructure(baseInfos, options.isFullDoc ?? true);
+    const paraInfos = parsePlainTextToParas(text);
+    const structure = analyzeDocumentStructure(paraInfos, options.isFullDoc ?? true);
     const modifications = computeModifications(structure.paragraphs, config, ctx);
     modifications.sort((a, b) => a.index - b.index);
     return { structure, modifications };

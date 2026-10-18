@@ -4,7 +4,7 @@ import type { DocumentStructure } from "@/utils/para-types";
 import { formatAttachments } from "@/jsa//commands/document";
 import { withUndoRecord } from "@/jsa/utils/document";
 import { scope } from "@/jsa/utils/performance";
-import { analyzeDocument, applyModifications, parseParagraphs } from "@/utils/para-pipeline";
+import { analyzeDocument, applyModifications, readParaInfos } from "@/utils/para-pipeline";
 
 /**
  * 设置正文样式，避免频繁地直接操作 Range，优化运行效率
@@ -104,7 +104,7 @@ function formatGovDoc(config: TypographyConfig, doc: Wps.Document = ActiveDocume
     const mainStyleName = mainStyle.NameLocal;
     const titleStyleName = titleStyle.NameLocal;
 
-    const infos = scope("读取段落", () => parseParagraphs(doc));
+    const infos = scope("读取段落", () => readParaInfos(doc));
 
     // 传入 doc：启用"按需读取深层快照 + 差异生成修改指令"
     // → 已完成排版的段落不再重复执行 COM 写操作（大幅加快二次/多次排版速度）
