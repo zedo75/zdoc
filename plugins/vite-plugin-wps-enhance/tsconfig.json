@@ -6,9 +6,11 @@
         "declaration": true,
         "declarationMap": true,
 
-        "moduleResolution": "bundler"
+        "moduleResolution": "bundler",
         // "allowImportingTsExtensions": true // 允许导入 .ts 文件
         // "noEmit": true // 或者配置 emitDeclarationOnly，确保不输出 .js 文件（防止与源码混淆）
+        "strict": true,
+        "types": ["node", "vite/client"]
     },
     "include": ["./src/**/*.ts"]
 }
