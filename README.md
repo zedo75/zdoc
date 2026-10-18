@@ -1,237 +1,207 @@
-<h1 align="center">ZDoc</h1>
-<p align="center">
-  <strong>WPS Office JS 加载项 — 公文排版工具集，符合 GB/T 9704 标准</strong>
-</p>
-<p align="center">
-  <img src="https://img.shields.io/badge/version-1.1.0-green?style=flat-square" alt="Version" />
-  <img src="https://img.shields.io/badge/license-Custom-blue?style=flat-square" alt="License" />
-  <img src="https://img.shields.io/badge/WPS-JSAPI-orange?style=flat-square" alt="WPS JSAPI" />
-  <img src="https://img.shields.io/badge/Vue-3-brightgreen?style=flat-square" alt="Vue 3" />
-  <img src="https://img.shields.io/badge/TypeScript-5-blue?style=flat-square" alt="TypeScript" />
-</p>
+<div align="center">
 
-## ✨ 功能特性
+# zdoc · 公文排版工作台
 
-- **一键排版** — 自动设置页边距、页眉页脚、文档网格，应用标准正文/标题样式，智能识别小标题
-- **页面布局** — 快速设置页边距（上 3.7cm / 下 3.5cm / 左 2.8cm / 右 2.6cm）、页眉页脚距离
-- **图片处理** — 批量修改嵌入型图片尺寸、排版居中、压缩及导出
-- **快捷样式** — 通过 Ribbon 下拉菜单快速切换字体（二号小标宋 / 三号黑体 / 楷体 / 仿宋）、固定行距、清除格式
-- **编号转换** — 动态自动编号与静态文本互转（含一 / 二级标题序号转动态编号）
-- **页眉页脚** — 已在「公文设置」中统一配置页眉内容 / 字体 / 位置，页脚支持页码（外侧 / 居中 / 内侧）、奇偶页
-- **文本对比** — 支持效率 / 字符两种对比模式及差异精度调节，并支持与文档选区 / 段落书签实时同步
-- **邮件合并** — 增强合并域弹窗、记录导航、数据源信息查看与一键更新域
-- **批量排版** — 多文档批量应用公文格式
-- **辅助清理** — 清除空段落、空格与缩进互转、正则替换、标点全半角转换
-- **自定义 Ribbon** — 通过 `vite-plugin-wps-enhance` 生成功能区选项卡，同时自动扫描并生成 WPS 枚举类型
+**让 WPS 加载项开发回归现代前端工程化**
+**让公文排版从手工反复调整变成一键可复现的操作**
 
-## 🚀 快速开始
+[![TypeScript](https://img.shields.io/badge/TypeScript-7.x-3178c6?logo=typescript&logoColor=fff)](#)
+[![Vue](https://img.shields.io/badge/Vue-3.x-42b883?logo=vue.js&logoColor=fff)](#)
+[![Vite](https://img.shields.io/badge/Vite-8.x-646cff?logo=vite&logoColor=fff)](#)
+[![WPS](https://img.shields.io/badge/WPS-JSA-ff6b00)](#)
+[![Tests](https://img.shields.io/badge/vitest-60%2B%20cases-6e9f18)](#)
 
-### 安装
+[功能手册](./FEATURES.md) · [架构设计](./ARCHITECTURE.md) · [问题反馈](https://github.com/your-repo/issues)
 
-**方式一：下载 Release（推荐）**
+</div>
 
-从 [Releases](https://github.com/zedo/zdoc/releases) 下载最新 `zdoc.exe`，双击安装即可。
+## 这是什么
 
-**方式二：手动安装**
+**一套基础设施 + 一个开箱即用的应用：**
 
-1. 下载 `zdoc.7z`
-2. 解压到 WPS 加载项目录：`%APPDATA%\kingsoft\wps\jsaddons\`
-3. 重启 WPS，在“组件”选项卡中找到“ZDoc”
+- 🧩 **`vite-plugin-wps-enhance`** —— Vite 插件，把 WPS 加载项从"手写 XML + 魔法数字 + 无法测试"升级到前端工程化水平
+- 📝 **`zdoc`** —— 基于此插件构建的公文排版工作台：一键排版、批量处理、活文档对比、邮件合并增强、版头生成……
 
-**银河麒麟系统**：提供一键安装 / 更新脚本，详见 [wiki - 银河麒麟安装脚本](./wiki.md#银河麒麟安装脚本)。
+> 如果你只想要"又一个公文助手"，市面上有很多。
+> 如果你想找**工程化程度、可测试性、二次排版速度**都到位的方案，继续往下读。
 
-### 使用
+---
 
-1. 在 WPS 文字中打开需要格式化的公文文档
-2. 点击功能区 **“一键排版”** 按钮
-3. 如需调整格式，点击 **“格式设置”** 进行配置
-4. 点击 **“一键恢复”** 可撤销排版操作
-5. 排版后可在侧边面板查看 / 修改元素类型和文字
+## 为什么不是又一个"公文助手"
 
-## 🛠️ 开发
+### 与传统 WPS 加载项开发方式的对比
 
-### 环境要求
+| 维度             | 传统方式（VBA / 手写 XML / 裸 JSA）       | 本项目                                                     |
+| ---------------- | ----------------------------------------- | ---------------------------------------------------------- |
+| **Ribbon 定义**  | 手写数百行 XML，改按钮要同步改 XML + 绑定 | TypeScript 函数式 API，自动渲染 XML                        |
+| **控件回调**     | 控件 `id` 是裸字符串，拼错只能运行时崩    | 自动生成 `RibbonControlId` **联合类型**，编译期校验        |
+| **枚举常量**     | 必须 `wps.Enum.xxx` 或裸写魔法数字        | 源码里写 `wdAlignParagraphCenter` 就够，**构建时按需生成** |
+| **图片图标**     | 手写路径字符串，改名/删图即时崩           | 扫描目录生成 `ImageFileName` 类型，**路径由 TS 保证**      |
+| **排版逻辑测试** | 必须开 WPS 人工点按钮观察                 | **纯文本输入 → vitest 断言**，CI 可跑                      |
+| **排版速度**     | 全量重设每个属性，二次排版与首次一样慢    | **差异计算**：已排好的段落一条指令都不发，二次排版接近瞬时 |
+| **新增段落样式** | 分散在 3~5 个函数里的 if/else             | `ATTRS` 数组加一项，核心遍历代码零改动                     |
+| **dev 二次启动** | 每次重扫 `.d.ts` 枚举库                   | 三级缓存（内存→落盘→实扫），**命中 <1ms**                  |
+| **弹窗冷启动**   | 拉起完整应用                              | URL 分流：`?dialog=xxx` 只加载 Vue + 单组件，**≈500ms**    |
 
-- Node.js >= 22
-- pnpm >= 11
-- WPS Office（需支持 JS 加载项）
+### 一个具体例子
 
-### 安装依赖
+**传统方式**：给"落款日期"加一条左对齐规则，你要在排版函数、样式应用、差异检测三个地方同时改。
+
+**本项目**：打开 `para-attributes.ts`，在 `ATTRS` 数组加一项：
+
+```ts
+{
+    key: "alignment",
+    desired(p) {
+        if (p.semanticKinds.has("signatureDate")) return wdAlignParagraphLeft;
+        return undefined;
+    },
+    readCom: (rng) => rng.ParagraphFormat.Alignment,
+    isEqual: (a, b) => a === b,
+    apply: (rng, v) => { rng.ParagraphFormat.Alignment = v; },
+}
+```
+
+差异计算、应用修改、属性合并全部自动生效——**并且自带单测能力**。
+
+---
+
+## 功能速览
+
+> 完整操作说明见 [功能手册](./FEATURES.md)
+
+### 🚀 核心能力
+
+| 模块              | 一句话                                                                   |
+| ----------------- | ------------------------------------------------------------------------ |
+| **一键排版**      | 标题/正文/层级/抬头/附件/落款全自动识别 + 应用样式，**二次排版近似瞬时** |
+| **活文档对比**    | 在文档里标记一段文字，之后编辑这段文字，对比框**实时同步**               |
+| **批量排版**      | 拖入多个 docx，进度条 + 时间戳日志，单个失败不影响其他                   |
+| **快捷样式弹窗**  | 选中文本→点按钮，**弹窗秒开**（不加载主应用）                            |
+| **邮件合并增强**  | 域底纹三档、记录导航、可用域单击插入，**鼠标移入自动刷新**               |
+| **版头生成**      | 红头文件版头：发文机关标志 / 发文字号 / 分隔线                           |
+| **页面设置**      | 六项边距 + 页眉 + 页脚，全部支持鼠标滚轮调值                             |
+| **全半角 / 标点** | 英文标点转全角、字母数字转半角、引号配对更正                             |
+
+### 📋 页面设置面板
+
+四个可折叠区（页面 / 字体 / 页眉 / 页脚），独立应用或一键「应用所有设置」。
+
+- **页眉**带密级预设：内部★注意保管 / 秘密★1年 / 机密★5年 / 绝密★长期
+- **页脚**页码 **5 种位置**（内侧/外侧/左/中/右）带位置示意图
+- **字体**联动：改中文字体，西文字体若选「随中文」自动跟随
+- **状态提示**：切换文档时页脚自动刷新「已设置 / 未检测到页码」
+
+---
+
+## 典型工作流
+
+### 场景一：新收一份公文，一键排版
+
+1. 打开文档
+2. Ribbon → 快速排版 → 完成
+3. 标题、正文、层级标题、抬头、附件、落款全部识别并套用样式
+
+**再排一次几乎是瞬时的**——差异计算只对确实不一致的段落下发指令。
+
+### 场景二：修改一稿，看看改了哪里
+
+1. Ribbon → 文本对比 → 打开任务窗格
+2. 在文档里**选中原始文字** → 点击「📌 标记选区段落」
+3. 切到「旧文本」记为原稿，再切到「新文本」，随手编辑文档
+4. 对比框**实时显示改动**——无需先保存两份文件
+
+### 场景三：领导下发 20 个文件，统一格式
+
+1. Ribbon → 批量排版
+2. 选择 20 个 docx
+3. 点「开始批量排版」，进度条 + 每条的日志（成功绿/失败红）
+4. 单个文档打开失败不影响其他
+
+### 场景四：编辑文档时右栏需要看到合并域
+
+1. Ribbon → 邮件合并 → 插入合并域
+2. **鼠标移入面板时自动拉取最新字段列表**（在文档里改了表头，回来立刻是新的）
+3. 单击字段标签 → 插入到光标位置
+4. 顶部可直接输入记录号跳转 + 切换「显示值 / 显示域」+ 调整域底纹
+
+---
+
+## 快速开始
 
 ```bash
-# 安装项目依赖
+# 1. 安装
 pnpm install
 
-# （可选）全局安装 WPS JS 加载项官方工具
-npm install -g wpsjs
-```
-
-### 开发调试
-
-```bash
+# 2. 开发（Vite 热更新 + WPS 调试）
 pnpm dev
+
+# 3. 单元测试（无需 WPS 环境）
+pnpm test
+
+# 4. 打包
+pnpm build
 ```
 
-`pnpm dev` 会先执行 `predev` 钩子（`node scripts/wps.js dev --port 3889`），完成以下工作：
+**环境要求**：WPS Office 2019+ / Node.js 18+ / pnpm 8+
 
-- 在 WPS 加载项配置中注册本地调试地址 `http://127.0.0.1:3889`；
-- 配置未发生变化时跳过写入，避免重复触发 WPS 重载；
-- 随后启动 Vite 开发服务器（端口 3889）并自动打开 WPS 加载项。
+---
 
-预览时同样会通过 `prepreview` 调用 `scripts/wps.js dev --port 4173`，逻辑一致。
-
-> `scripts/wps.js` 是项目自带的 WPS 加载项命令行脚本，封装了调试注册与安装两个子命令，详见 [wiki - scripts/wps.js](./wiki.md#scriptswpsjs)。
-
-### 构建
-
-```bash
-pnpm build            # 前端构建（输出到 dist/）
-pnpm build:install    # 将 dist 复制到 jsaddons 并按版本号注册安装条目
-pnpm build:zip        # 打包为 7z 格式（依赖官方 wpsjs，）
-pnpm build:exe        # Windows 生成 exe 安装包（依赖官方 wpsjs，）
-```
-
-### 代码规范
-
-```bash
-pnpm fmt              # Prettier 格式化
-pnpm typecheck        # TypeScript 类型检查
-pnpm test             # 运行单元测试（Vitest 5）
-```
-
-## 📁 目录结构
+## 架构一句话
 
 ```text
-zdoc/
-├── plugins/                        # 自定义 Vite 插件
-│   └── vite-plugin-wps-enhance/    # ribbon.xml 生成 + WPS 枚举扫描 + 类型注入
-│       └── src/
-│           ├── common/             # 通用工具
-│           ├── enum/               # WPS 枚举扫描与 wps-env.d.ts 生成
-│           ├── image/              # 图标处理
-│           └── ribbon/             # Ribbon XML DSL 解析
-├── public/                         # 静态资源
-│   ├── images/                     # 图标资源
-│   ├── favicon.ico
-│   ├── logo.svg
-│   └── manifest.xml                # 加载项清单
-├── scripts/                        # 辅助构建脚本
-│   ├── publish-xml.js              # 发布 jsplugins.xml
-│   └── wps.js                      # WPS 加载项 dev / install 命令行脚本
-├── src/
-│   ├── components/                 # 公共 Vue 组件
-│   │   ├── dialogs/                # 弹窗组件（按需加载）
-│   │   │   ├── mail-merge-field.vue
-│   │   │   ├── quick-style.vue
-│   │   │   └── regex-replace.vue
-│   │   ├── ...
-│   │   └── xxx.vue
-│   ├── composables/                # 组合式函数
-│   │   ├── ...
-│   │   └── useXxx.ts
-│   ├── config/
-│   │   ├── defaults.ts             # 默认排版配置（国标）
-│   │   └── validator.ts            # 配置校验（Valibot）
-│   ├── directives/                 # 自定义指令
-│   │   ├── index.ts
-│   │   └── wheelChange.ts          # 滚轮调整数值指令
-│   ├── jsa/                        # WPS JS API 相关
-│   │   ├── commands/               # 业务命令
-│   │   │   ├── batchTypo.ts        # 批量排版
-│   │   │   ├── bookmark.ts         # 书签
-│   │   │   ├── document.ts         # 页面设置、样式清理
-│   │   │   ├── field.ts            # 域操作、编号转换
-│   │   │   ├── govDoc.ts           # 公文排版核心
-│   │   │   ├── header.ts           # 页眉
-│   │   │   ├── image.ts            # 图片
-│   │   │   ├── letterhead.ts       # 红头
-│   │   │   ├── mergeMail.ts        # 邮件合并
-│   │   │   ├── pagenum.ts          # 页脚页码
-│   │   │   ├── punctuation.ts      # 标点符号
-│   │   │   └── table.ts            # 表格
-│   │   ├── ribbon/                 # Ribbon 配置
-│   │   │   ├── actions.ts          # 按钮回调
-│   │   │   ├── taskPane.ts         # 任务窗格
-│   │   │   └── xmlConfig.ts        # Ribbon XML DSL
-│   │   ├── types/                  # WPS 业务类型声明
-│   │   └── utils/                  # 文档工具函数
-│   │       ├── document.ts         # 撤销录制、文档操作辅助
-│   │       ├── filesSystem.ts      # 配置读写
-│   │       ├── performance.ts      # scope 性能计时
-│   │       └── styles.ts           # 字体 / 字号批量设置
-│   ├── stores/
-│   │   └── govDocConfig.ts         # 公文配置
-│   ├── styles/
-│   │   └── main.css                # 全局样式
-│   ├── utils/
-│   │   ├── fonts.ts                # 字体常量
-│   │   ├── globalErrorHandler.ts   # 全局错误处理
-│   │   ├── para-patterns.ts        # 正则与常量
-│   │   ├── para-types.ts           # 类型定义
-│   │   ├── para-analysis.ts        # 结构分析、语义分类、附件处理
-│   │   ├── para-attributes.ts      # 属性注册表 + 差异计算 + 应用
-│   │   ├── para-pipeline.ts        # COM 编排：读取 → 分析 → 差异 → 应用
-│   │   ├── typo-model.test.ts      # 测试
-│   │   ├── typo.ts                 # 排版工具函数
-│   │   └── url.ts
-│   ├── views/                      # 任务窗格视图
-│   │   ├── index.vue               # 首页
-│   │   ├── settings.vue            # 公文设置（含页眉页脚）
-│   │   ├── image-resize.vue        # 图片尺寸调整
-│   │   ├── batch-typo.vue          # 批量排版
-│   │   └── text-compare.vue        # 文本对比
-│   ├── main.ts                     # 入口文件（条件引导启动）
-│   └── shims-vue.d.ts              # Vue 类型声明
-├── index.html                      # 网页入口
-├── lefthook.yml                    # lefthook 配置
-├── package.json
-└── vite.config.ts
+┌─────────────────────────────────────────────────┐
+│  纯逻辑层（可单测）                              │
+│  para-analysis.ts → 语义识别（14 种段落类型）    │
+├─────────────────────────────────────────────────┤
+│  属性注册表 + 差异计算                           │
+│  para-attributes.ts → 声明式扩展，新增属性=加一行│
+├─────────────────────────────────────────────────┤
+│  COM 编排（唯一触碰 Wps.* 的排版模块）           │
+│  para-pipeline.ts → 批量读段 / 缓存 / 差异应用   │
+└─────────────────────────────────────────────────┘
 ```
 
-## 📐 公文格式标准（GB/T 9704）
+**完整架构设计**（三层分离、vite-plugin-wps-enhance 原理、测试策略、扩展指南）见 [ARCHITECTURE.md](./ARCHITECTURE.md)。
 
-| 元素     | 字体            | 字号                            | 行距         | 对齐 / 缩进     |
-| -------- | --------------- | ------------------------------- | ------------ | --------------- |
-| 红头标题 | 方正小标宋\_GBK | 22pt（二号）                    | 固定 28.95pt | 居中            |
-| 一级标题 | 黑体            | 16pt（三号）                    | 固定 28.95pt | 左对齐          |
-| 二级标题 | 楷体\_GB2312    | 16pt（三号）                    | 固定 28.95pt | 左对齐          |
-| 三级标题 | 仿宋\_GB2312    | 16pt（三号）                    | 固定 28.95pt | 首行缩进 2 字符 |
-| 正文     | 仿宋\_GB2312    | 16pt（三号）                    | 固定 28.95pt | 首行缩进 2 字符 |
-| 页面     | A4（210×297mm） | 上 37mm 下 35mm 左 28mm 右 26mm |              |                 |
+---
 
-## 🧰 技术栈
-
-- **Vue 3** — 前端框架（Composition API）
-- **TypeScript** — 类型安全
-- **Vite** — 构建工具
-- **Tailwind CSS 3** — 样式框架（**暂不升级 v4**，见 [wiki](./wiki.md#3-tailwind-css-v4-兼容性)）
-- **Element Plus** — UI 组件库
-- **@vueuse/core** — 组合式工具集
-- **Valibot** — 配置校验
-- **Vitest 5** — 单元测试
-
-## 📝 提交规范
-
-本项目使用 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
+## 目录结构
 
 ```text
-feat: 新增功能
-fix: 修复 bug
-refactor: 重构
-docs: 文档更新
-style: 代码格式
-chore: 构建/工具
+plugins/vite-plugin-wps-enhance/   工程化插件
+  ├── enum/                        枚举扫描 + 按需生成
+  ├── ribbon/                      TS 配置 → ribbon.xml
+  └── image/                       图片目录 → 文件名类型
+
+src/
+├── jsa/commands/                  20+ WPS 命令模块
+├── jsa/ribbon/                    Ribbon 声明式配置
+├── utils/para-*.ts                排版引擎
+├── components/                    设置区组件
+├── composables/                   WPS 交互封装
+├── views/                         任务窗格页面
+└── tests/                         60+ 单测 / 集成测试
 ```
 
-## 📄 开源许可证
+---
 
-本项目目前处于**持续开发完善阶段**，代码、功能及 API 均可能发生较大变动。
+## 技术栈
 
-- **非商业用途**：在遵守项目文档说明的前提下，允许个人学习、研究及内部使用。
-- **商业用途**：**未经明确书面授权，禁止用于任何商业目的**。
-- **授权方式**：如需商业使用或获取正式授权，请联系项目维护者。
+Vue 3 · TypeScript · Vite · WPS JSA · Vitest · Valibot · VueUse · Tailwind CSS · Element Plus
 
-## 🔗 链接
+---
 
-- [WPS 加载项开发文档](https://open.wps.cn/documents/app-integration-dev/wps365/client/wpsoffice/jsapi/addin-api/wps-addin-availability)
-- [报告问题](https://github.com/zedo/zdoc/issues)
+## 路线图
+
+- [ ] `vite-plugin-wps-enhance` 独立发布到 npm
+- [ ] 排版配置云端同步
+- [ ] 更多公文子文体模板（函 / 请示 / 批复 / 纪要）
+- [ ] VS Code 插件：`.d.ts` 就地跳转 + 枚举补全
+- [ ] 排版规则可视化编辑器
+
+<div align="center">
+
+**如果这个项目对你有所帮助，欢迎 ⭐ Star**
+
+</div>
