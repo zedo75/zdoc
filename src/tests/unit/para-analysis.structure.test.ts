@@ -10,7 +10,7 @@ describe("结构分析：完整公文样例", () => {
 
     test("主标题块：文档首连续 2 行非空", () => {
         expect(doc.structure.mainTitleBlocks.length, "块数").toBe(1);
-        const [s, e] = doc.structure.mainTitleBlocks[0];
+        const { start: s, end: e } = doc.structure.mainTitleBlocks[0];
         expect(s, "块起点").toBe(0);
         expect(e, "块终点").toBe(1);
 
@@ -144,7 +144,7 @@ describe("结构分析：多行主标题块", () => {
     test("整块识别：连续 5 行合为一个块", () => {
         const doc = new TestDoc(LINES);
         expect(doc.structure.mainTitleBlocks.length, "块数").toBe(1);
-        const [s, e] = doc.structure.mainTitleBlocks[0];
+        const { start: s, end: e } = doc.structure.mainTitleBlocks[0];
         expect(s, "起点").toBe(0);
         expect(e, "终点").toBe(4);
     });

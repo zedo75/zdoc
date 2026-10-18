@@ -48,7 +48,7 @@ describe("parsePlainTextToParas 纯文本解析", () => {
         expect(paras[0].isAttachment, "「附件1 ...」识别为附件").toBe(true);
         expect(paras[1].isAttachment, "「正常段落。」不是附件").toBe(false);
         expect(paras[2].hasForbidden, "「含【标题中禁止符号】」命中禁止符").toBe(true);
-        expect(paras[5].hasFormFeed, "含 \\f 标记换页符").toBe(true);
+        expect(paras[5].hasFormFeed, "含 \\f 标记换页符，但不紧跟\r 视为没有").toBe(false);
     });
 
     test("表格单元格标记 \\x07 → isTable=true", () => {

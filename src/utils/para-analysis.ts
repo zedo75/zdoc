@@ -10,6 +10,7 @@ import type { SimpleFontConfig, TopicBoldMode } from "@/jsa/types";
 import type {
     DocumentStructure,
     ParagraphSemanticKind,
+    ParaGroup,
     PlainParaInfo,
     StructuredParaInfo,
     SubRangeMod,
@@ -191,9 +192,11 @@ export function computePlainParaInfo(text: string): Omit<PlainParaInfo, "isSkipp
     const trimmed = text.trim();
     return {
         text,
-        isEmpty: trimmed === "",
+        // isEmpty：真空行，不含换页符
+        isEmpty: trimmed === "" && !text.includes("\f"),
         isAttachment: ATTACHMENT_LINE_PREFIX_REGEX.test(trimmed),
-        hasFormFeed: text.includes("\f"),
+        // 只有 \f 后紧跟 \r 才算分页符；A\fB 忽略
+        hasFormFeed: /\f\r/.test(text),
         hasForbidden: MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX.test(trimmed),
         isTable: text.includes("\x07"),
         isHeading: false, // 由 analyze 阶段填
@@ -316,121 +319,6 @@ function classifyPara(
 }
 
 /**
- * 根据段落信息数组找出所有应升级为主标题的连续段落块。
- *
- * - 候选起点：文档首非空、附件后、换页符后（可扩展抬头上方）
- * - 向后扩展直到遇空行、层级标题、禁止符号、附件或范围外
- * - 块后必须跟空行；若一直延伸到文档末尾而无空行，该块被丢弃
- * - 附件段落自身不会被选为候选，也不会被包含在块内
- *
- * @param paraInfos 应传入分析阶段的 `StructuredParaInfo[]`；
- *   若传 `PlainParaInfo[]`（`isHeading` 恒 false），层级标题会可能被误纳入标题块。
- */
-export function findMainTitleBlocks(paraInfos: StructuredParaInfo[]): [number, number][] {
-    const n = paraInfos.length;
-    const blocks: [number, number][] = [];
-    const candidates = new Set<number>();
-
-    // 文档第一个非空段落（排除附件、换页符、禁止符）
-    const firstNonEmpty = paraInfos.findIndex((p) => !p.isEmpty);
-    if (
-        firstNonEmpty !== -1 &&
-        !paraInfos[firstNonEmpty].isTable &&
-        !paraInfos[firstNonEmpty].isAttachment &&
-        !paraInfos[firstNonEmpty].hasFormFeed &&
-        !paraInfos[firstNonEmpty].hasForbidden &&
-        paraInfos[firstNonEmpty].isInRange
-    ) {
-        candidates.add(firstNonEmpty);
-    }
-
-    // 判断该索引位置的段落能否作为主标题块的候选起点
-    const isEligibleBlockStart = (idx: number) =>
-        idx < n &&
-        !paraInfos[idx].isTable &&
-        !paraInfos[idx].isAttachment &&
-        !paraInfos[idx].hasForbidden &&
-        paraInfos[idx].isInRange;
-
-    // 附件后第一个非空段落（跳过中间空行）
-    paraInfos.forEach((p, idx) => {
-        if (p.isAttachment) {
-            let next = idx + 1;
-            while (next < n && paraInfos[next].isEmpty) next++;
-            if (isEligibleBlockStart(next)) {
-                candidates.add(next);
-            }
-        }
-    });
-
-    // 换页符后第一个非空段落（跳过中间空行，排除附件自身）
-    paraInfos.forEach((p, idx) => {
-        if (p.hasFormFeed) {
-            let next = idx + 1;
-            while (next < n && paraInfos[next].isEmpty) next++;
-            if (isEligibleBlockStart(next)) {
-                candidates.add(next);
-            }
-        }
-    });
-
-    // 从候选生成块
-    const sorted = Array.from(candidates).sort((a, b) => a - b);
-    for (const start of sorted) {
-        if (blocks.some(([s, e]) => start >= s && start <= e)) continue;
-
-        const info = paraInfos[start];
-        if (info.isTable) continue;
-        if (info.isEmpty || info.hasForbidden || info.isHeading) continue;
-
-        // 若前一个非空段落是层级标题，则相邻时不作为标题
-        let prev = start - 1;
-        while (prev >= 0 && paraInfos[prev].isEmpty) prev--;
-        if (prev >= 0 && paraInfos[prev].isHeading) continue;
-
-        // 向后扩展：收集连续的非空、非层级、非禁止、非附件、在范围内的段落
-        let end = start;
-        while (end < n) {
-            const cur = paraInfos[end];
-            if (cur.isEmpty) break;
-            if (cur.isHeading) break;
-            if (cur.hasForbidden) {
-                end = -1;
-                break;
-            }
-            if (cur.isAttachment) break; // 附件本身不应包含在标题块内
-            if (cur.isTable) break; // 表格切断主标题块
-            if (!cur.isInRange) break;
-            end++;
-        }
-        if (end === -1 || end <= start) continue;
-
-        // 块后必须有空行（文档末尾也可接受，但此处强制要求空行）
-        if (end < n && paraInfos[end].isEmpty) {
-            blocks.push([start, end - 1]);
-        }
-    }
-
-    // 合并相邻或重叠的块
-    if (blocks.length > 1) {
-        const merged: typeof blocks = [];
-        let [curS, curE] = blocks[0];
-        for (let i = 1; i < blocks.length; i++) {
-            const [s, e] = blocks[i];
-            if (s <= curE + 1) {
-                curE = Math.max(curE, e);
-            } else {
-                merged.push([curS, curE]);
-                [curS, curE] = [s, e];
-            }
-        }
-        merged.push([curS, curE]);
-        return merged;
-    }
-    return blocks;
-}
-
-/**
  * 核心分析函数：输入段落信息，输出文档结构分析结果。
  *
  * @param paraInfos 段落信息；按数组下标（0-based）遍历，输出的 `index` 会置为 1-based
@@ -467,15 +355,15 @@ export function analyzeDocumentStructure(
     }
 
     // 2. 全文模式下：主标题块识别（复用现有函数）
-    let mainTitleBlocks: Array<[number, number]> = [];
+    let mainTitleBlocks: ParaGroup[] = [];
     if (isFullDoc) {
         // findMainTitleBlocks 依赖 paraInfos 的 isHeading，所以传已处理的数组
         mainTitleBlocks = findMainTitleBlocks(paragraphs);
     }
 
     // 3. 把主标题块内的段落升级为 mainTitle / subtitle
-    for (const [startIdx, endIdx] of mainTitleBlocks) {
-        for (let i = startIdx; i <= endIdx; i++) {
+    for (const { start, end } of mainTitleBlocks) {
+        for (let i = start; i <= end; i++) {
             const p = paragraphs[i];
             if (!p) continue;
             // 已经是层级标题的不抢（避免"一、XXX"这种被误当主标题时被降级覆盖）
@@ -534,6 +422,83 @@ export function analyzeDocumentStructure(
     }
 
     return { paragraphs, mainTitleBlocks, signatures };
+}
+
+// ==================== 主标题块识别 ====================
+
+/**
+ * 段落自身是否“干净”：
+ *
+ * 非空、非表格/附件/禁止符/层级标题/范围外、不含换页符
+ */
+function isCleanParagraph(p: StructuredParaInfo): boolean {
+    return (
+        !p.isEmpty &&
+        !p.isTable &&
+        !p.isAttachment &&
+        !p.hasForbidden &&
+        !p.hasFormFeed &&
+        !p.isHeading &&
+        p.isInRange
+    );
+}
+
+/** 前方最近的有效段落类型：文档首 / 分隔（附件或换页符段）/ 普通段落 */
+type PrevSignal = "docStart" | "divider" | "other";
+
+/**
+ * 向前找最近的有效段落，归类为分隔信号。
+ *
+ * 必须先判 `isAttachment` / `hasFormFeed`，再判 `isEmpty`：
+ * 真实 COM 文本 `\r\f\r` 解析出的 `"\f\r"` 段是 `isEmpty=false`、
+ * `hasFormFeed=true`，若当空行跳过会越过它，导致换页符后的标题漏识别。
+ *
+ * 层级标题归入 `other`：标题后的段落不应再升级为主标题。
+ */
+function prevSignal(paraInfos: StructuredParaInfo[], idx: number): PrevSignal {
+    for (let i = idx - 1; i >= 0; i--) {
+        const p = paraInfos[i];
+        if (p.isAttachment || p.hasFormFeed) return "divider";
+        if (!p.isEmpty) return "other";
+    }
+    return "docStart";
+}
+
+/**
+ * 从 start 向后扩展到空行，返回 `[start, end]`；块不成立返回 null。
+ *
+ * 空行（`isEmpty`）是唯一右边界，块后必须有空行；文档末尾无空行则丢弃。
+ * 换页符段不是空行，会以“非干净段落”的身份让整块作废。
+ */
+function extendToBlankLine(paraInfos: StructuredParaInfo[], start: number): ParaGroup | null {
+    let end = start;
+    while (end < paraInfos.length) {
+        if (paraInfos[end].isEmpty) break;
+        if (!isCleanParagraph(paraInfos[end])) return null;
+        end++;
+    }
+    if (end >= paraInfos.length) return null;
+    return { start, end: end - 1 };
+}
+
+/**
+ * 找出所有应升级为主标题的连续段落块。
+ *
+ * 起点：干净段落，且前方信号为 `docStart` / `divider`（不是 `other`）。
+ * 终点：向后扩展至空行，块内每段都必须干净（见 `extendToBlankLine`）。
+ *
+ * 不切组、不合并：候选之间必然被空行或换页符段隔开，不会产生重叠；
+ * 同一分隔信号后只有紧邻它的第一个干净段落能成为起点。
+ */
+export function findMainTitleBlocks(paraInfos: StructuredParaInfo[]): ParaGroup[] {
+    const blocks: ParaGroup[] = [];
+    for (let i = 0; i < paraInfos.length; i++) {
+        if (!isCleanParagraph(paraInfos[i])) continue;
+        if (prevSignal(paraInfos, i) === "other") continue;
+        const block = extendToBlankLine(paraInfos, i);
+        if (block) blocks.push(block);
+    }
+    return blocks;
 }
 
 // =========================================================================

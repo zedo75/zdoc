@@ -15,11 +15,22 @@
 export interface PlainParaInfo {
     /** 段落文本（含尾部的 `\r`，与 WPS `Range.Text` 一致） */
     text: string;
-    /** 是否为空段落 */
+    /**
+     * 是否为空段落。
+     *
+     * `text.trim() === ""` 且不含换页符时为 `true`：
+     * - 纯空白段（空格、制表符等）算空行；
+     * - `\r\f\r` 产生的换页符段不算空行（见 `hasFormFeed`）。
+     */
     isEmpty: boolean;
     /** 段落开头为"附件X" */
     isAttachment: boolean;
-    /** 包含换页符 `\f` */
+    /**
+     * 段落含换页符 `\f\r`（WPS 分页符形态）。
+     *
+     * 仅当 `\f` 后紧跟 `\r` 时为 `true`；
+     * 段内孤立的 `\f`（如 `A\fB`，后无 `\r`）视为普通字符，忽略。
+     */
     hasFormFeed: boolean;
     /** 包含禁止符号（见 FORBIDDEN_SYMBOLS_REGEX） */
     hasForbidden: boolean;
@@ -139,13 +150,29 @@ export interface StructuredParaInfo extends PlainParaInfo {
 }
 
 /**
+ * 一段连续非空段落的闭区间（0-based 段落索引）。
+ *
+ * 按空行切分得到；`start` / `end` 均指向非空段落，
+ * 即 `paraInfos[start]` 到 `paraInfos[end]` 全部非空，且两侧（若有）为空行。
+ */
+export interface ParaGroup {
+    start: number;
+    end: number;
+}
+
+/**
  * 文档结构分析结果。
  */
 export interface DocumentStructure {
     /** 结构化段落列表 */
     paragraphs: StructuredParaInfo[];
-    /** 主标题块列表；`[startIdx, endIdx]` 为 0-based 段落索引闭区间 */
-    mainTitleBlocks: Array<[number, number]>;
+    /**
+     * 主标题块列表。
+     *
+     * 每项为一段连续非空段落的闭区间（0-based），`start` / `end` 均为段落数组下标；
+     * 块后必有空行（`findMainTitleBlocks` 保证），块内不含层级标题、附件、表格。
+     */
+    mainTitleBlocks: ParaGroup[];
     /**
      * 所有落款位置（从前往后），可能多个：正文 + 各附件。
      */
