@@ -34,9 +34,8 @@ import {
     SALUTATION_ORG_DEPT_REGEX,
     SALUTATION_REGEX,
     SIGNATURE_DATE_REGEX,
-    SUBTITLE_BRACKET_DATE_REGEX,
-    SUBTITLE_DOC_NUMBER_REGEX,
-    SUBTITLE_DRAFT_REGEX,
+    SUBTITLE_PAREN_ORDINAL_REGEX,
+    SUBTITLE_PAREN_REGEX,
     TOPIC_PREFIX_REGEX,
     TOPIC_REGEX,
 } from "@/utils/para-patterns";
@@ -99,19 +98,16 @@ export function isLikelySignatureDate(text: string): boolean {
  * 判断文本是否为副标题特征行（单行判断，主标题块内部再提升为 subtitle）。
  *
  * 命中以下任一即视为副标题行：
- * - 括号含"稿/案"，如 "（送审稿）"、"（征求意见稿）"
- * - 公文文号，如 "（某委〔2026〕1号）"
- * - 括号日期（支持 X/空格占位），如 "（2024年X月X日）"
- * - 以破折号 "——" 开头（引题/副题）
+ * - 整行被一对全角圆括号包裹，如 "（送审稿）"、"（某委〔2026〕1号）"、
+ *   "（2024年X月X日）"、"（仅供参考）"；
+ * - 以破折号 "——" 开头（引题/副题）。
  *
  * @param text 段落文本
  */
 export function isLikelySubtitleLine(text: string): boolean {
     const t = text.trim();
     return (
-        SUBTITLE_DRAFT_REGEX.test(t) ||
-        SUBTITLE_DOC_NUMBER_REGEX.test(t) ||
-        SUBTITLE_BRACKET_DATE_REGEX.test(t) ||
+        (SUBTITLE_PAREN_REGEX.test(t) && !SUBTITLE_PAREN_ORDINAL_REGEX.test(t)) ||
         t.startsWith("——")
     );
 }

@@ -80,6 +80,12 @@ export const MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX = /[。；！？【】〖〗_=|{
 
 // ==================== 副标题相关 ====================
 
+/** 副标题：整行被一对全角圆括号包裹，且括号内非空、无嵌套 */
+export const SUBTITLE_PAREN_REGEX = /^（[^（）]+）$/;
+
+/** 纯序号括号（一）（二）（1）（2）……；用于从 SUBTITLE_PAREN_REGEX 中剔除 */
+export const SUBTITLE_PAREN_ORDINAL_REGEX = /^（[0-9一二三四五六七八九十]+）$/;
+
 /** 副标题：括号内含"稿/案"，如（送审稿）、（征求意见稿） */
 export const SUBTITLE_DRAFT_REGEX = /^（[^）]*[稿案][^）]*）$/;
 
