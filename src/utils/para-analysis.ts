@@ -9,6 +9,7 @@
 import type { SimpleFontConfig, TopicBoldMode } from "@/jsa/types";
 import type {
     DocumentStructure,
+    ListKind,
     ParagraphSemanticKind,
     ParaGroup,
     PlainParaInfo,
@@ -24,7 +25,9 @@ import {
     H1_REGEX,
     H2_REGEX,
     H3_REGEX,
-    LIST_ITEM_PREFIX_REGEX,
+    LIST_ITEM_NUMERIC_REGEX,
+    LIST_ITEM_PAREN_HAN_REGEX,
+    LIST_ITEM_PAREN_NUM_REGEX,
     MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX,
     PLAIN_NAME_REGEX,
     SALUTATION_EACH_UNIT_REGEX,
@@ -64,6 +67,27 @@ export function isLikelySalutation(text: string): boolean {
 }
 
 /**
+ * 首句号前（无句号则取段尾，去掉 `\r`）的 `，` / `、` 分隔符数量。
+ *
+ * 分隔符过多说明是"并列描述"而不是标题，用于 h2 / h3 的简洁性判定。
+ */
+function countSeparatorsBeforePeriod(text: string): number {
+    const firstPeriod = text.indexOf("。");
+    const before = firstPeriod > 0 ? text.slice(0, firstPeriod) : text.replace(/\r$/, "");
+    return (before.match(/[，、]/g) || []).length;
+}
+
+/**
+ * 段落是 h2 候选（满足 H2_REGEX 且第一个句号前 `，`/`、` 少于 2 个）。
+ *
+ * 与 isLikelyH3 同理：首句号前分隔符过多说明是并列描述而不是小节标题，
+ * 例如 "（一）会议组织，包括甲、乙、丙。" 应视为 listItem。
+ */
+export function isLikelyH2(text: string): boolean {
+    return H2_REGEX.test(text) && countSeparatorsBeforePeriod(text) < 2;
+}
+
+/**
  * 段落是 h3 候选（满足 H3_REGEX 且第一个句号前 ，/、 少于 2 个）。
  *
  * 第一个句号前分隔符过多说明这是"并列描述"而不是标题，
@@ -71,15 +95,20 @@ export function isLikelySalutation(text: string): boolean {
  * 第一个句号前已包含多个顿号，不符合标题的简洁特征。
  */
 export function isLikelyH3(text: string): boolean {
-    if (!H3_REGEX.test(text)) return false;
+    return H3_REGEX.test(text) && countSeparatorsBeforePeriod(text) < 2;
+}
 
-    const firstPeriod = text.indexOf("。");
-    if (firstPeriod > 0) {
-        const before = text.slice(0, firstPeriod);
-        const sepCount = (before.match(/[，、]/g) || []).length;
-        if (sepCount >= 2) return false;
-    }
-    return true;
+/**
+ * 从段落前缀判断列表项类型。
+ *
+ * @param text 段落文本
+ * @returns 列表项前缀类型；非列表项返回 "none"
+ */
+function getPrefixKind(text: string): ListKind {
+    if (LIST_ITEM_NUMERIC_REGEX.test(text)) return "numeric";
+    if (LIST_ITEM_PAREN_HAN_REGEX.test(text)) return "parenHan";
+    if (LIST_ITEM_PAREN_NUM_REGEX.test(text)) return "parenNum";
+    return "none";
 }
 
 /**
@@ -228,90 +257,111 @@ function findTopicMatches(text: string): StructuredParaInfo["subMatches"] {
 }
 
 /**
- * 对单段文本做初步语义识别。
+ * 创建带状态的段落分类器。
  *
- * @param info 段落基础信息
- * @param prevIsListItem 上一段的语义是否为 `listItem`。
- *     用于抑制 "编号列表项被误判为 h3"
- * @returns 语义类别集合、主分类，以及是否为副标题行
+ * 分类器内部维护「上一段是什么类型的列表项」这一个状态（`lastListKind`），用于：
+ * - **同组延续**：`（一）` 后接 `（二）` 时抑制 h2；
+ * - **跨组放行**：`1.` 后接 `（一）` 属跨组，若本段简洁仍可判 h2；
+ * - **h3 抑制**：前段是任意列表项时，本段 `1.` 不再升格为 h3。
  *
- * 不处理主标题块、落款等需要全局上下文的判断。
+ * 状态在下列情况下重置为 `"none"`：
+ * - 表格 / 空行段落（短路返回）；
+ * - 非 listItem 段落（只有 `kinds.has("listItem")` 才延续前缀类型）。
+ *
+ * @returns `classifyPara(info)`：对单段文本做初步语义识别，
+ *   不处理主标题块、落款等需要全局上下文的判断。
  */
-function classifyPara(
-    info: PlainParaInfo,
-    prevIsListItem: boolean,
-): {
-    kinds: Set<ParagraphSemanticKind>;
-    primary: ParagraphSemanticKind;
-    isSubtitleLine?: boolean;
-} {
-    const kinds = new Set<ParagraphSemanticKind>();
-    const text = info.text;
+export function createParaClassifier() {
+    let lastListKind: ListKind = "none";
 
-    // 表格段落：最高优先级，直接短路
-    if (info.isTable) {
-        kinds.add("table");
-        return { kinds, primary: "table" };
-    }
+    return function classifyPara(info: PlainParaInfo): {
+        kinds: Set<ParagraphSemanticKind>;
+        primary: ParagraphSemanticKind;
+        isSubtitleLine?: boolean;
+    } {
+        const kinds = new Set<ParagraphSemanticKind>();
+        const text = info.text;
 
-    if (info.isEmpty) {
-        kinds.add("empty");
-        return { kinds, primary: "empty" };
-    }
-
-    if (info.isAttachment) {
-        kinds.add("attachment");
-    }
-
-    // 抬头
-    if (SALUTATION_REGEX.test(text) && isLikelySalutation(text)) {
-        kinds.add("salutation");
-    }
-
-    // 层级标题（每段最多匹配一个）
-    if (H1_REGEX.test(text)) kinds.add("h1");
-    else if (H2_REGEX.test(text)) kinds.add("h2");
-    else if (isLikelyH3(text) && !prevIsListItem) {
-        kinds.add("h3");
-    } else if (LIST_ITEM_PREFIX_REGEX.test(text)) {
-        // 以"数字."开头、但不是 h3 → 列表项
-        kinds.add("listItem");
-    }
-
-    // 副标题（单行判断，主标题块内部再提升为 subtitle）
-    const isSubtitle = isLikelySubtitleLine(text);
-
-    // 段内 topic
-    TOPIC_REGEX.lastIndex = 0;
-    if (TOPIC_REGEX.test(text)) {
-        kinds.add("topic");
-        TOPIC_REGEX.lastIndex = 0; // 重置 g 标志
-    }
-
-    // 如果一个都没匹配到，视为 body
-    if (kinds.size === 0 && !isSubtitle) {
-        kinds.add("body");
-    }
-
-    // 主分类优先级
-    const priority: ParagraphSemanticKind[] = [
-        "h1",
-        "h2",
-        "h3",
-        "listItem", // 和 h3 互斥，和 salutation/attachment 也几乎不会同时命中（判定前缀不同）
-        "salutation",
-        "attachment",
-        "topic",
-        "body",
-    ];
-    let primary: ParagraphSemanticKind = "body";
-    for (const k of priority) {
-        if (kinds.has(k)) {
-            primary = k;
-            break;
+        // 表格段落：最高优先级，直接短路
+        if (info.isTable) {
+            kinds.add("table");
+            lastListKind = "none"; // 表格 / 空行：短路，同时重置状态
+            return { kinds, primary: "table" };
         }
-    }
-    return { kinds, primary, isSubtitleLine: isSubtitle };
+
+        if (info.isEmpty) {
+            kinds.add("empty");
+            lastListKind = "none";
+            return { kinds, primary: "empty" };
+        }
+
+        if (info.isAttachment) {
+            kinds.add("attachment");
+        }
+
+        // 抬头
+        if (SALUTATION_REGEX.test(text) && isLikelySalutation(text)) {
+            kinds.add("salutation");
+        }
+
+        // 层级标题：同组延续 → 抑制 h2；前段为任意列表项 → 抑制 h3
+        const currentListKind = getPrefixKind(text);
+        const continuesSameGroup = lastListKind !== "none" && currentListKind === lastListKind;
+
+        // h2：只抑制 "同组延续" 和 "带分隔符（长描述）" 两种，留下一个放行通道；
+        // h3：前段任意 listItem 一律抑制，不留通道，不限同组。"1." 永远视为列表延续。
+        const hasSeparator = countSeparatorsBeforePeriod(text) > 0;
+        const suppressH2 = lastListKind !== "none" && (continuesSameGroup || hasSeparator);
+        const suppressH3 = lastListKind !== "none";
+
+        if (H1_REGEX.test(text)) {
+            kinds.add("h1");
+        } else if (isLikelyH2(text) && !suppressH2) {
+            kinds.add("h2");
+        } else if (isLikelyH3(text) && !suppressH3) {
+            kinds.add("h3");
+        } else if (currentListKind !== "none") {
+            kinds.add("listItem");
+        }
+
+        // 副标题（单行判断，主标题块内部再提升为 subtitle）
+        const isSubtitle = isLikelySubtitleLine(text);
+
+        // 段内 topic
+        TOPIC_REGEX.lastIndex = 0;
+        if (TOPIC_REGEX.test(text)) {
+            kinds.add("topic");
+            TOPIC_REGEX.lastIndex = 0; // 重置 g 标志
+        }
+
+        // 如果一个都没匹配到，视为 body
+        if (kinds.size === 0 && !isSubtitle) {
+            kinds.add("body");
+        }
+
+        // 更新状态：只有本段是 listItem 时才记住前缀类型
+        lastListKind = kinds.has("listItem") ? currentListKind : "none";
+
+        // 主分类优先级
+        const priority: ParagraphSemanticKind[] = [
+            "h1",
+            "h2",
+            "h3",
+            "listItem", // 和 h3 互斥，和 salutation/attachment 也几乎不会同时命中（判定前缀不同）
+            "salutation",
+            "attachment",
+            "topic",
+            "body",
+        ];
+        let primary: ParagraphSemanticKind = "body";
+        for (const k of priority) {
+            if (kinds.has(k)) {
+                primary = k;
+                break;
+            }
+        }
+        return { kinds, primary, isSubtitleLine: isSubtitle };
+    };
 }
 
 /**
@@ -329,11 +379,11 @@ export function analyzeDocumentStructure(
 ): DocumentStructure {
     // 1. 初步逐段分类
     const paragraphs: StructuredParaInfo[] = [];
-    let prevIsListItem = false; // 状态沿段落序列传递
+    const classify = createParaClassifier();
 
     for (let idx = 0; idx < paraInfos.length; idx++) {
         const info = paraInfos[idx];
-        const { kinds, primary, isSubtitleLine } = classifyPara(info, prevIsListItem);
+        const { kinds, primary, isSubtitleLine } = classify(info);
         const isHeading = kinds.has("h1") || kinds.has("h2") || kinds.has("h3");
 
         paragraphs.push({
@@ -345,9 +395,6 @@ export function analyzeDocumentStructure(
             isHeading,
             isSubtitleLine,
         });
-
-        // 更新状态：本段是否是列表项（只有 "列表项" 才延续状态）
-        prevIsListItem = kinds.has("listItem");
     }
 
     // 2. 全文模式下：主标题块识别（复用现有函数）

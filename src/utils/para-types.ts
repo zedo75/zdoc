@@ -102,6 +102,16 @@ export type ParagraphSemanticKind =
     /** 表格 */
     | "table";
 
+/**
+ * 编号前缀类型；用于判断相邻段落是否属于同一组列表。
+ *
+ * - `numeric`：`1.` / `2.` / `12.`；
+ * - `parenHan`：`（一）` / `（十二）`；
+ * - `parenNum`：`（1）` / `（12）`；
+ * - `none`：非编号段落。
+ */
+export type ListKind = "none" | "numeric" | "parenHan" | "parenNum";
+
 // ==================== 段内子范围 ====================
 
 /**

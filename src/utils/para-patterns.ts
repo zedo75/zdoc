@@ -67,8 +67,14 @@ export const TOPIC_REGEX = /(?<=^|[。？！])[一二三四五六七八九十][�
 /** 段内小标题前缀：一是 / 二是 / … / 十是，或一要 / 二要 / … / 十要。 */
 export const TOPIC_PREFIX_REGEX = /^[一二三四五六七八九十][是要]/;
 
-/** 段落是否以"数字."开头（与 H3_REGEX 的前缀一致） */
-export const LIST_ITEM_PREFIX_REGEX = /^[0-9]{1,2}\./;
+// ==================== 列表项前缀 ====================
+
+/** 阿拉伯数字 + 半角点：`1.`、`12.` */
+export const LIST_ITEM_NUMERIC_REGEX = /^[0-9]{1,2}\./;
+/** 全角括号 + 汉字数字：`（一）`、`（十二）` */
+export const LIST_ITEM_PAREN_HAN_REGEX = /^（[一二三四五六七八九十]+）/;
+/** 全角括号 + 阿拉伯数字：`（1）`、`（12）` */
+export const LIST_ITEM_PAREN_NUM_REGEX = /^（[0-9]{1,2}）/;
 
 /**
  * 主标题中禁止出现的符号。
