@@ -5,9 +5,7 @@ export function openWpsChangeCaseDialog() {
     Application.Dialogs.Item(wdDialogFormatChangeCase).Show();
 }
 
-/**
- * 生成全角字符串："ABCD...Z" + "abcd...z" + "0123...9"
- */
+/** 生成全角字符串："Ａ…Ｚ" + "ａ…ｚ" + "０…９" */
 function buildFullWidthStr() {
     let s = "";
     // 全角大写字母 Ａ-Ｚ：码点 0xFF21 ~ 0xFF3A
@@ -19,9 +17,7 @@ function buildFullWidthStr() {
     return s;
 }
 
-/**
- * 生成半角字符串："ABCD...Z" + "abcd...z" + "012...9"
- */
+/** 生成半角字符串："A…Z" + "a…z" + "0…9" */
 function buildHalfWidthStr() {
     let s = "";
     // 半角大写 A-Z：0x41 ~ 0x5A
@@ -33,8 +29,9 @@ function buildHalfWidthStr() {
     return s;
 }
 
-function replaceAll(findText: string, replaceText: string, useWildcards: boolean) {
-    let find = ActiveDocument.Content.Find;
+/** 复用 */
+export function replaceAll(findText: string, replaceText: string, useWildcards: boolean) {
+    const find = ActiveDocument.Content.Find;
     find.ClearFormatting();
     find.MatchWildcards = useWildcards || false;
     find.Execute(
@@ -52,20 +49,250 @@ function replaceAll(findText: string, replaceText: string, useWildcards: boolean
     );
 }
 
-/**
- * 英文标点转为全角（即中文标点）
- *
- * 建议配合 withUndoRecord 使用
- */
-export function convertPunctuationToFullWidth() {
-    let eng = [",", ";", ":", "?", "!", "(", ")"];
-    let chn = ["，", "；", "：", "？", "！", "（", "）"];
+/* =========================================================================
+ *  规则定义
+ * ========================================================================= */
 
-    // 基本标点替换（无通配符）
-    for (let i = 0; i < eng.length; i++) {
-        replaceAll(eng[i], chn[i], false);
-    }
+export type PunctuationRuleGroup = "引号配对" | "数字与时间" | "顿号合并" | "标点全角化";
+
+export interface PunctuationRule {
+    /** 唯一 id，用于勾选持久化 */
+    id: string;
+    /** 分组，仅用于 UI 展示 */
+    group: PunctuationRuleGroup;
+    /** 规则名 */
+    label: string;
+    /** 简短的“效果演示”，显示在标题下方 */
+    description?: string;
+    findText: string;
+    replaceText: string;
+    useWildcards?: boolean;
+    /** UI 默认是否勾选 */
+    defaultEnabled?: boolean;
 }
+
+/**
+ * 所有标点相关的替换规则。
+ *
+ * 注意：顺序会影响最终结果（比如“先配对双引号、再配对单引号”），
+ * 请不要随意调整同一个 group 内的规则顺序。
+ */
+export const PUNCTUATION_RULES: PunctuationRule[] = [
+    /* ---------- 标点全角化（默认不勾选，避免误伤英文/数字） ---------- */
+    {
+        id: "punct-full-comma",
+        group: "标点全角化",
+        label: "英文逗号 → 中文逗号",
+        description: ", → ，",
+        findText: ",",
+        replaceText: "，",
+        defaultEnabled: true,
+    },
+    {
+        id: "punct-full-semicolon",
+        group: "标点全角化",
+        label: "英文分号 → 中文分号",
+        description: "; → ；",
+        findText: ";",
+        replaceText: "；",
+        defaultEnabled: true,
+    },
+    {
+        id: "punct-full-colon",
+        group: "标点全角化",
+        label: "英文冒号 → 中文冒号",
+        description: ": → ：",
+        findText: ":",
+        replaceText: "：",
+        defaultEnabled: true,
+    },
+    {
+        id: "punct-full-question",
+        group: "标点全角化",
+        label: "英文问号 → 中文问号",
+        description: "? → ？",
+        findText: "?",
+        replaceText: "？",
+        defaultEnabled: true,
+    },
+    {
+        id: "punct-full-exclam",
+        group: "标点全角化",
+        label: "英文感叹号 → 中文感叹号",
+        description: "! → ！",
+        findText: "!",
+        replaceText: "！",
+        defaultEnabled: true,
+    },
+    {
+        id: "punct-full-lparen",
+        group: "标点全角化",
+        label: "英文左括号 → 中文左括号",
+        description: "( → （",
+        findText: "(",
+        replaceText: "（",
+        defaultEnabled: true,
+    },
+    {
+        id: "punct-full-rparen",
+        group: "标点全角化",
+        label: "英文右括号 → 中文右括号",
+        description: ") → ）",
+        findText: ")",
+        replaceText: "）",
+        defaultEnabled: true,
+    },
+
+    /* ---------- 引号配对 ---------- */
+    {
+        id: "quote-double-half",
+        group: "引号配对",
+        label: "半角双引号 → 中文双引号",
+        description: '"内容" → “内容”',
+        findText: `"((*))"`,
+        replaceText: "\u201C\\2\u201D",
+        useWildcards: true,
+        defaultEnabled: true,
+    },
+    {
+        id: "quote-single-half",
+        group: "引号配对",
+        label: "半角单引号 → 中文单引号",
+        description: "'内容' → ‘内容’",
+        findText: `'((*))'`,
+        replaceText: "\u2018\\2\u2019",
+        useWildcards: true,
+        defaultEnabled: true,
+    },
+    {
+        id: "quote-double-full",
+        group: "引号配对",
+        label: "全角双引号 → 中文双引号",
+        description: "＂内容＂ → “内容”",
+        findText: `\uff02((*))\uff02`,
+        replaceText: "\u201C\\2\u201D",
+        useWildcards: true,
+        defaultEnabled: true,
+    },
+    {
+        id: "quote-single-full",
+        group: "引号配对",
+        label: "全角单引号 → 中文单引号",
+        description: "＇内容＇ → ‘内容’",
+        findText: `\uff07((*))\uff07`,
+        replaceText: "\u2018\\2\u2019",
+        useWildcards: true,
+        defaultEnabled: true,
+    },
+
+    /* ---------- 数字与时间 ---------- */
+    {
+        id: "time-colon",
+        group: "数字与时间",
+        label: "时间冒号转半角",
+        description: "12：30 → 12:30",
+        findText: "([0-9]{1,})：([0-9]{1,})",
+        replaceText: "\\1:\\2",
+        useWildcards: true,
+        defaultEnabled: true,
+    },
+    {
+        id: "num-period",
+        group: "数字与时间",
+        label: "数字间中文句号转小数点",
+        description: "1。5 → 1.5",
+        findText: "([0-9]{1,})。([0-9])",
+        replaceText: "\\1.\\2",
+        useWildcards: true,
+        defaultEnabled: false,
+    },
+    {
+        id: "num-period-full",
+        group: "数字与时间",
+        label: "数字间全角句点转半角",
+        description: "1．5 → 1.5",
+        findText: "([0-9]{1,})．([0-9])",
+        replaceText: "\\1.\\2",
+        useWildcards: true,
+        defaultEnabled: true,
+    },
+    {
+        id: "para-num-period",
+        group: "数字与时间",
+        label: "段首序号后全角句点",
+        description: "段首「1．」→「1.」",
+        findText: "(^p[0-9]{1,})．",
+        replaceText: "\\1.",
+        useWildcards: true,
+        defaultEnabled: true,
+    },
+
+    /* ---------- 顿号合并 ---------- */
+    {
+        id: "book-title-comma",
+        group: "顿号合并",
+        label: "书名号之间的顿号",
+        description: "》、《 → 》《",
+        findText: "》、《",
+        replaceText: "》《",
+        defaultEnabled: false,
+    },
+    {
+        id: "quote-comma",
+        group: "顿号合并",
+        label: "引号之间的顿号",
+        description: "”、“ → ”“",
+        findText: "”、“",
+        replaceText: "”“",
+        defaultEnabled: false,
+    },
+];
+
+/** 是否允许交换 find/replace（含反向引用的规则不行） */
+export function canSwapRule(rule: PunctuationRule): boolean {
+    return !/\\[0-9]/.test(rule.replaceText);
+}
+
+/* =========================================================================
+ *  执行
+ * ========================================================================= */
+
+export interface ApplyPunctuationOptions {
+    swappedIds?: Iterable<string>;
+}
+
+/** 按 id 列表应用规则；swappedIds 中的规则会交换 find/replace */
+export function applyPunctuationRules(
+    ruleIds: string[],
+    options: ApplyPunctuationOptions = {},
+): { applied: number } {
+    const idSet = new Set(ruleIds);
+    const swappedSet = new Set(options.swappedIds ?? []);
+    let applied = 0;
+    for (const rule of PUNCTUATION_RULES) {
+        if (!idSet.has(rule.id)) continue;
+        const swapped = swappedSet.has(rule.id) && canSwapRule(rule);
+        const find = swapped ? rule.replaceText : rule.findText;
+        const replace = swapped ? rule.findText : rule.replaceText;
+        replaceAll(find, replace, !!rule.useWildcards);
+        applied++;
+    }
+    return { applied };
+}
+
+/**
+ * 标点更正（兼容旧调用）
+ * - 基础更正
+ * - 公文标点更正
+ */
+export function correctPunctuation() {
+    const ids = PUNCTUATION_RULES.filter((r) => r.defaultEnabled).map((r) => r.id);
+    applyPunctuationRules(ids);
+}
+
+/* =========================================================================
+ *  其他标点工具
+ * ========================================================================= */
 
 /**
  * 全角英文字母及数字转半角
@@ -93,29 +320,4 @@ export function convertAlphaNumToHalfWidth() {
     for (let i = 0; i < full.length; i++) {
         replaceAll(full.charAt(i), half.charAt(i), false);
     }
-}
-
-/**
- * 标点更正
- * - 基础更正
- * - 公文标点更正
- */
-export function correctPunctuation() {
-    // WPS 有 bug：https://bbs.wps.cn/topic/87508  https://bbs.wps.cn/topic/42856
-    // 半角双引号配对
-    replaceAll(`"((*))"`, "\u201C\\2\u201D", true);
-    replaceAll(`'((*))'`, "\u2018\\2\u2019", true);
-    // 全角双引号配对
-    replaceAll(`\uff02((*))\uff02`, "\u201C\\2\u201D", true);
-    replaceAll(`\uff07((*))\uff07`, "\u2018\\2\u2019", true);
-
-    // 数字间的句号、冒号（日期、时间）
-    replaceAll("([0-9]{1,})：([0-9]{1,})", "\\1:\\2", true);
-    replaceAll("([0-9]{1,})。([0-9])", "\\1.\\2", true);
-    replaceAll("([0-9]{1,})．([0-9])", "\\1.\\2", true);
-    replaceAll("(^p[0-9]{1,})．", "\\1.", true);
-
-    // 顿号
-    replaceAll("》、《", "》《", true);
-    replaceAll("”、“", "”“", true);
 }

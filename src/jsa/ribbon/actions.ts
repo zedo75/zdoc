@@ -11,7 +11,6 @@ import { exportAllImages, formatInlineImages } from "@/jsa/commands/image";
 import { viewMailSourceInfo } from "@/jsa/commands/mergeMail";
 import {
     convertAlphaNumToHalfWidth,
-    convertPunctuationToFullWidth,
     correctPunctuation,
     openWpsChangeCaseDialog,
 } from "@/jsa/commands/punctuation";
@@ -110,7 +109,7 @@ const actionHandlers: Partial<Record<RibbonControlId, RibbonAction>> = {
             else convertSpaceToIndent();
         }),
 
-    btnConvertPunctuation: () => withUndoRecord(convertPunctuationToFullWidth),
+    btnConvertPunctuation: () => toggleTaskPane("punctuation-rules", "标点规则"),
     btnConvertAlphaNum: () => withUndoRecord(convertAlphaNumToHalfWidth),
     btnCorrectPunctuation: () => withUndoRecord(correctPunctuation),
     btnChangeCase: () => withUndoRecord(openWpsChangeCaseDialog),
