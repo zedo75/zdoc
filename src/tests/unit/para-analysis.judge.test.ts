@@ -1,10 +1,70 @@
 import {
     computeTopicBoldRanges,
     isLikelyByline,
+    isLikelyDocTitle,
+    isLikelyH1,
+    isLikelyH2,
+    isLikelyH3,
+    isLikelyLetterhead,
     isLikelySalutation,
     isLikelySignatureDate,
-    isLikelySubtitleLine,
+    isLikelySubtitle,
 } from "@/utils/para-analysis";
+
+// ==================== 层级标题简洁性 ====================
+
+describe("isLikelyH1 / H2 / H3 首句号前分隔符判定", () => {
+    test.each([
+        ["一、总体要求\r", true, "无分隔符"],
+        ["一、加强领导，明确责任\r", true, "1 个逗号，仍算简洁"],
+        ["一、加强领导，明确责任、压实任务\r", false, "2 个分隔符，视为并列描述"],
+    ])("%j → %s（%s）", (text, expected) => {
+        expect(isLikelyH1(text), `「${text.trim()}」`).toBe(expected);
+    });
+
+    test("真实长段落：一、二、开头的整段正文不再算一级标题", () => {
+        const p1 =
+            "一、统筹甲、乙、丙等各方力量，某个时间节点前组织开展一次专项排查、专项梳理，兜底排查发现各类问题，建立工作清单，推动应录尽录，深化动态管理，做好问题解决。";
+        expect(isLikelyH1(p1), "首句号前 3 个分隔符").toBe(false);
+
+        const p2 =
+            "二、甲部门、乙部门负责人按照附件2分组安排，于某个时间节点前至少参加1次所负责区域的会议，开展现场指导（每组参加的具体区域由各组联络员与区域对接确定）。";
+        expect(isLikelyH1(p2), "首句号前 3 个分隔符").toBe(false);
+    });
+
+    test("h2 / h3 与 h1 采用同一阈值", () => {
+        expect(isLikelyH2("（一）会议组织，包括甲。"), "h2 1 个").toBe(true);
+        expect(isLikelyH2("（一）会议组织，包括甲、乙。"), "h2 2 个").toBe(false);
+        expect(isLikelyH3("1.步骤，含甲。"), "h3 1 个").toBe(true);
+        expect(isLikelyH3("1.步骤，含甲、乙。"), "h3 2 个").toBe(false);
+    });
+
+    test("h2 含冒号 / @ → 不是标题（正文格式）", () => {
+        expect(isLikelyH2("（一）请将回执报送邮箱：a@b.com。"), "冒号 + @").toBe(false);
+        expect(isLikelyH2("（二）会议时间：10月30日。"), "冒号").toBe(false);
+    });
+
+    test("h2 含书名号 /（送审稿）→ 不是标题（多为审议某文件的条目）", () => {
+        expect(isLikelyH2("（二）审议《XX工作规则》《XX建议名单》。"), "书名号").toBe(false);
+        expect(isLikelyH2("（二）审议XX工作规则（送审稿）。"), "（送审稿）").toBe(false);
+        expect(isLikelyH2("（一）研究XX方案（草案）。"), "（草案）").toBe(false);
+    });
+
+    test("h2 只判首句号之前：正文合段里的书名号 / 冒号不影响", () => {
+        expect(
+            isLikelyH2("（五）议程。一是审议《XX（送审稿）》；二是领导讲话。"),
+            "书名号在句号之后",
+        ).toBe(true);
+        expect(isLikelyH2("（一）分组安排。发送至邮箱：a@b.com。"), "冒号在句号之后").toBe(true);
+    });
+
+    test("h2 标题与正文合段：正文部分不参与简洁性判定", () => {
+        expect(
+            isLikelyH2("（四）分组安排。鼓励各单位、社会组织、高校学生等积极参与。"),
+            "首句号前无分隔符 → 仍为 h2",
+        ).toBe(true);
+    });
+});
 
 // ==================== 抬头判定 ====================
 
@@ -39,7 +99,7 @@ describe("isLikelySubtitleLine 副标题行判定", () => {
         ["（2024年度总结）", "括号短语，非稿/案/文号/日期也命中"],
         ["—— 关于XX的若干意见", "破折号开头"],
     ])("%j → true（%s）", (text, _desc) => {
-        expect(isLikelySubtitleLine(text), `「${text}」`).toBe(true);
+        expect(isLikelySubtitle(text), `「${text}」`).toBe(true);
     });
 
     test.each([
@@ -54,7 +114,7 @@ describe("isLikelySubtitleLine 副标题行判定", () => {
         ["（（一））", "嵌套括号"],
         ["（）", "空括号"],
     ])("%j → false（%s）", (text, _desc) => {
-        expect(isLikelySubtitleLine(text), `「${text}」不应识别为副标题`).toBe(false);
+        expect(isLikelySubtitle(text), `「${text}」不应识别为副标题`).toBe(false);
     });
 });
 
@@ -100,6 +160,49 @@ describe("isLikelyByline 署名行判定", () => {
     test("首字非姓氏 + 不含 · → 不判为署名", () => {
         const text = "通知内容  详附件";
         expect(isLikelyByline(text), `「${text}」`).toBe(false);
+    });
+});
+
+// ==================== 版头 / 标题判定 ====================
+
+describe("isLikelyLetterhead 版头判定", () => {
+    test.each([
+        ["XX省XX市XX区人民政府XX工作领导小组办公室", "小红头：机关名称折两行后合并"],
+        ["XX县人民政府文件", "大红头：以「文件」收尾"],
+        ["中共XX县委员会组织部\r中共XX县委员会宣传部", "联合发文：多行合并"],
+        ["XX省人民政府办公厅", "以「办公厅」收尾"],
+    ])("%j → true（%s）", (text, _desc) => {
+        expect(isLikelyLetterhead(text), `「${text}」`).toBe(true);
+    });
+
+    test.each([
+        ["关于XX部门、XX部门负责人列席XX级XX联席会议的通知", "标题：含事由词与顿号"],
+        ["XX省人民政府办公厅关于印发《XX省2025年政务公开工作要点》的通知", "标题：含印发与书名号"],
+        ["为做好XX工作，现将有关事项通知如下", "正文：含逗号"],
+        ["XX工作简报", "简报报头：以「报」收尾，不是机关名称"],
+        ["XX局", "过短，不够机关名称特征"],
+    ])("%j → false（%s）", (text, _desc) => {
+        expect(isLikelyLetterhead(text), `「${text}」不应识别为版头`).toBe(false);
+    });
+});
+
+describe("isLikelyDocTitle 标题判定（版头兜底用）", () => {
+    test.each([
+        ["关于XX工作的通知", "含「关于」"],
+        ["XX县2026年XX工作要点", "以文种「要点」收尾"],
+        ["XX县XX工作要点（送审稿）", "文种后带括号说明"],
+        ["在XX会议上的讲话", "讲话稿标题"],
+    ])("%j → true（%s）", (text, _desc) => {
+        expect(isLikelyDocTitle(text), `「${text}」`).toBe(true);
+    });
+
+    test.each([
+        ["各单位：", "抬头"],
+        ["为做好XX工作，现将有关事项通知如下", "正文导语"],
+        ["关于XX工作，现将有关事项通知如下", "正文：虽含「关于」，但带逗号"],
+        ["中共XX县委办公室", "机关名称"],
+    ])("%j → false（%s）", (text, _desc) => {
+        expect(isLikelyDocTitle(text), `「${text}」不应识别为标题`).toBe(false);
     });
 });
 
@@ -154,15 +257,37 @@ describe("computeTopicBoldRanges topic 加粗范围", () => {
         expect(r, "prefix 模式").toEqual([{ start: 0, length: 2, bold: true }]);
     });
 
-    test("none 模式返回空数组", () => {
+    test("none 模式返回 undefined", () => {
         const text = "一是加强领导。";
         const r = computeTopicBoldRanges({ text, start: 0, length: text.length }, "none");
-        expect(r, "none 模式").toEqual([]);
+        expect(r, "none 模式").toBeUndefined();
     });
 
-    test("无法匹配前缀时返回空数组", () => {
+    test("无法匹配前缀时返回 undefined", () => {
         const text = "首先是加强领导。";
         const r = computeTopicBoldRanges({ text, start: 0, length: text.length }, "auto");
-        expect(r, "「首先是」不是有效 topic 前缀").toEqual([]);
+        expect(r, "「首先是」不是有效 topic 前缀").toBeUndefined();
+    });
+
+    test("非 topic 文本返回 undefined", () => {
+        // ← 改名 + 明确意图
+        // "首先是..." 首字"首"不在 [一...十]，被前置检查拦截
+        const text = "首先是加强领导。";
+        const r = computeTopicBoldRanges({ text, start: 0, length: text.length }, "auto");
+        expect(r).toBeUndefined();
+    });
+
+    test("分号结尾的 topic 也能匹配（TOPIC_REGEX 的 ；终止符）", () => {
+        // "一是加强领导；" 以分号结尾，TOPIC_REGEX 允许
+        const text = "一是加强领导；";
+        const r = computeTopicBoldRanges({ text, start: 0, length: text.length }, "prefix");
+        expect(r).toEqual([{ start: 0, length: 2, bold: true }]);
+    });
+
+    test("start 非 0 时子范围基准为 match.start", () => {
+        // 覆盖 match.start ≠ 0 的偏移
+        const text = "一是加强领导。";
+        const r = computeTopicBoldRanges({ text, start: 10, length: text.length }, "auto");
+        expect(r).toEqual([{ start: 10, length: text.length, bold: true }]);
     });
 });

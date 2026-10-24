@@ -126,6 +126,42 @@ describe("结构分析：落款单位行扫描防御", () => {
     });
 });
 
+describe("落款识别：正文日期与换页符防御", () => {
+    test("日期后还有正文：不当作落款", () => {
+        const doc = new TestDoc(["一、时间安排", "2025年3月15日", "上午9:00开始。", "", "正文。"]);
+        expect(doc.signatures(), "不应识别出落款").toHaveLength(0);
+        expect(doc.at(1).kind, "h1 不被标成单位行").toBe("h1");
+        expect(doc.at(2).kind, "日期不被标成落款").toBe("body");
+    });
+
+    test("日期后隔空行还有标题：不当作落款", () => {
+        const doc = new TestDoc([
+            "一、时间安排",
+            "2025年3月15日",
+            "",
+            "二、地点安排",
+            "",
+            "正文。",
+        ]);
+        expect(doc.signatures(), "不应识别出落款").toHaveLength(0);
+        expect(doc.at(1).kind, "h1 保持原样").toBe("h1");
+    });
+
+    test("换页符段不再被当作单位行", () => {
+        const doc = new TestDoc(["封面", "\f", "2025年3月15日"]);
+        const sigs = doc.signatures();
+        expect(sigs, "文末日期仍识别为只有日期的落款").toHaveLength(1);
+        expect(sigs[0].units, "封面 / 换页符段都不是单位行").toHaveLength(0);
+    });
+
+    test("标题块中的日期不再把标题当作单位行", () => {
+        const doc = new TestDoc(["关于XX工作的通知", "2025年3月15日", "", "正文内容。"]);
+        expect(doc.signatures(), "不应识别出落款").toHaveLength(0);
+        expect(doc.at(1).kind, "标题不被标成单位行").not.toBe("signatureUnit");
+        expect(doc.at(2).kind, "标题下的裸日期按副标题处理").toBe("subtitle");
+    });
+});
+
 // ==================== 多行主标题块（标题 + 署名 + 日期 + 文种） ====================
 
 describe("结构分析：多行主标题块", () => {

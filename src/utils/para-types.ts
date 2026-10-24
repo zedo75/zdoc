@@ -75,6 +75,8 @@ export interface ComParaInfo extends PlainParaInfo {
 export type ParagraphSemanticKind =
     /** 空行 */
     | "empty"
+    /** 版头（红头 / 发文机关标志，如「XX市人民政府办公室」） */
+    | "letterhead"
     /** 主标题（公文标题样式） */
     | "mainTitle"
     /** 副标题（主标题下的楷体行：稿、——、文号等） */
@@ -156,7 +158,7 @@ export interface StructuredParaInfo extends PlainParaInfo {
         text: string;
     }>;
     /** 是否为副标题特征行 */
-    isSubtitleLine?: boolean;
+    isSubtitle?: boolean;
 }
 
 /**
@@ -180,7 +182,8 @@ export interface DocumentStructure {
      * 主标题块列表。
      *
      * 每项为一段连续非空段落的闭区间（0-based），`start` / `end` 均为段落数组下标；
-     * 块后必有空行（`findMainTitleBlocks` 保证），块内不含层级标题、附件、表格。
+     * 块后为空行，或为语义终止段（抬头 / 以冒号结尾的导语，此时允许块后不接空行），
+     * 块内不含层级标题、附件、表格，也不含版头（`letterhead`）段落。
      */
     mainTitleBlocks: ParaGroup[];
     /**

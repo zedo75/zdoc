@@ -20,7 +20,7 @@ import type {
     SubRangeMod,
 } from "@/utils/para-types";
 
-import { computeTopicBoldRanges, makeTitleSubRange } from "@/utils/para-analysis";
+import { computeTitleSubRanges, computeTopicBoldRanges } from "@/utils/para-analysis";
 import { H1_REGEX, H2_REGEX, H3_REGEX } from "@/utils/para-patterns";
 
 // ==================== 属性描述符 ====================
@@ -186,22 +186,23 @@ export const ATTRS: AttrSpec[] = [
 
             // 一 / 二 / 三级标题前缀
             if (p.semanticKinds.has("h1")) {
-                const r = makeTitleSubRange(p.text, H1_REGEX, config.h1);
+                const r = computeTitleSubRanges(p.text, H1_REGEX, config.h1);
                 if (r) subs.push(...r);
             }
             if (p.semanticKinds.has("h2")) {
-                const r = makeTitleSubRange(p.text, H2_REGEX, config.h2);
+                const r = computeTitleSubRanges(p.text, H2_REGEX, config.h2);
                 if (r) subs.push(...r);
             }
             if (p.semanticKinds.has("h3")) {
-                const r = makeTitleSubRange(p.text, H3_REGEX, config.h3);
+                const r = computeTitleSubRanges(p.text, H3_REGEX, config.h3);
                 if (r) subs.push(...r);
             }
 
             // topic 小标题加粗
             if (p.semanticKinds.has("topic") && p.subMatches.length) {
                 for (const sm of p.subMatches) {
-                    subs.push(...computeTopicBoldRanges(sm, config.topicBoldMode));
+                    const boldSubs = computeTopicBoldRanges(sm, config.topicBoldMode);
+                    if (boldSubs) subs.push(...boldSubs);
                 }
             }
 
@@ -231,15 +232,17 @@ export const ATTR_BY_KEY = new Map(ATTRS.map((a) => [a.key, a]));
 /**
  * 判定段落是否整段跳过排版。
  *
- * 跳过条件全部由 COM 读取层写入 `isSkipped`，这里只做单一判定：
+ * 跳过条件：
  * - 表格段落
  * - 被 `zdoc_*` 书签覆盖
  * - 用户手动标记为"不排版"样式
+ * - 版头（红头 / 发文机关标志）：它是版式设计元素（字体、字号、颜色、
+ *   居中位置都由用户设定），排版改写会破坏红色版头，因此整段跳过
  *
- * 未来要新增跳过规则（如跳过脚注），只需修改 COM 读取层计算 `isSkipped` 的逻辑。
+ * 前三项由 COM 读取层写入 `isSkipped`；版头由结构分析阶段标出。
  */
 export function shouldSkipPara(p: StructuredParaInfo): boolean {
-    return p.isSkipped;
+    return p.isSkipped || p.semanticKinds.has("letterhead");
 }
 
 // ==================== 差异计算 ====================

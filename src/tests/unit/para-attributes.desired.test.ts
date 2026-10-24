@@ -123,4 +123,41 @@ describe("期望值：topic 加粗模式", () => {
         expect(p.boldPrefix(), `「${p.text}」应整句加粗`).toBe("一是提高站位。");
         expect(p.subRanges![0].length, "整句长度").toBe("一是提高站位。".length);
     });
+
+    test("分号分隔的条目逐条加粗（一是…；二是…；三是…）", () => {
+        const doc = new TestDoc([
+            "（五）议程。一是听取全县社会治理工作情况汇报；二是审议《工作规则（送审稿）》；三是县委副书记讲话；四是县委书记讲话。",
+        ]);
+        const p = doc.at(1);
+        expect(p.subMatches.length, "应按分号拆成 4 条").toBe(4);
+
+        const boldTexts = p
+            .subRanges!.filter((s) => s.bold)
+            .map((s) => p.info.text.slice(s.start, s.start + s.length));
+        expect(boldTexts, "prefix 模式：四条前缀都应加粗").toEqual([
+            "一是",
+            "二是",
+            "三是",
+            "四是",
+        ]);
+    });
+
+    test("auto 模式 + 分号分隔：短条目整句、长条目仅前缀", () => {
+        const cfg = { ...DEFAULT_TYPO_CONFIG, topicBoldMode: "auto" as const };
+        const doc = new TestDoc(
+            [
+                "（五）议程。一是听取汇报；二是审议《县委社会治理工作机制工作规则（送审稿）》《专项工作小组单位建议名单（送审稿）》；三是领导讲话。",
+            ],
+            cfg,
+        );
+        const p = doc.at(1);
+        const boldTexts = p
+            .subRanges!.filter((s) => s.bold)
+            .map((s) => p.info.text.slice(s.start, s.start + s.length));
+        expect(boldTexts, "短条目整句加粗，长条目只加粗前缀").toEqual([
+            "一是听取汇报；",
+            "二是",
+            "三是领导讲话。",
+        ]);
+    });
 });

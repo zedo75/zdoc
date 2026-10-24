@@ -55,4 +55,12 @@ describe("parsePlainTextToParas 纯文本解析", () => {
         const paras = parsePlainTextToParas("单元格1\x07单元格2\x07\r");
         expect(paras[0].isTable, "含 \\x07").toBe(true);
     });
+
+    test("附件前缀：正文引用不算附件，标题行仍算", () => {
+        const isAtt = (s: string) => parsePlainTextToParas(s)[0].isAttachment;
+        expect(isAtt("附件1和附件2的具体内容见下文。"), "正文引用").toBe(false);
+        expect(isAtt("附件1 任务分工表"), "编号后有空格").toBe(true);
+        expect(isAtt("附件10"), "编号后段尾").toBe(true);
+        expect(isAtt("附件1：任务分工表"), "编号后有冒号").toBe(true);
+    });
 });

@@ -206,6 +206,48 @@ describe("findMainTitleBlocks：阻断与丢弃", () => {
     });
 });
 
+// ==================== 语义终止段：抬头 / 导语 ====================
+
+describe("findMainTitleBlocks：抬头 / 导语作为终止段", () => {
+    test("标题后紧跟抬头（无空行）：抬头不被并入标题块", () => {
+        const doc = new TestDoc(["关于XX工作的通知", "各单位：", "", "正文内容。"]);
+        expect(doc.structure.mainTitleBlocks).toEqual([{ start: 0, end: 0 }]);
+        expect(doc.at(1).kind, "标题").toBe("mainTitle");
+        expect(doc.at(2).kind, "抬头").toBe("salutation");
+        expect(doc.at(2).style, "抬头使用正文样式").toBe("公文正文");
+    });
+
+    test("标题后紧跟导语（以冒号结尾，无空行）：导语不被并入标题块", () => {
+        const doc = new TestDoc([
+            "关于XX工作的通知",
+            "为做好XX工作，现将有关事项通知如下：",
+            "",
+            "正文内容。",
+        ]);
+        expect(doc.structure.mainTitleBlocks).toEqual([{ start: 0, end: 0 }]);
+        expect(doc.at(2).kind, "导语").toBe("body");
+    });
+
+    test("文档以抬头开头：不识别为主标题", () => {
+        const doc = new TestDoc(["各单位：", "", "正文内容。"]);
+        expect(doc.structure.mainTitleBlocks).toEqual([]);
+        expect(doc.at(1).kind, "抬头").toBe("salutation");
+        expect(doc.at(1).style, "抬头使用正文样式").toBe("公文正文");
+    });
+
+    test("标题后紧跟抬头且文档结束：标题仍识别", () => {
+        const doc = new TestDoc(["关于XX工作的通知", "各单位："]);
+        expect(doc.structure.mainTitleBlocks).toEqual([{ start: 0, end: 0 }]);
+        expect(doc.at(2).kind, "抬头").toBe("salutation");
+    });
+
+    test("附件后的落款单位 + 日期：不被当作标题块", () => {
+        const doc = new TestDoc(["附件1", "", "XX省人民政府办公厅", "2025年3月15日"]);
+        expect(doc.structure.mainTitleBlocks).toEqual([]);
+        expect(doc.at(3).kind, "落款单位").toBe("signatureUnit");
+    });
+});
+
 // ==================== 单元测试：多候选与相邻块 ====================
 
 describe("findMainTitleBlocks：多候选与相邻块", () => {
