@@ -5,29 +5,43 @@
     "material-icon-theme.folders.associations": {
         "jsa": "javascript"
     },
-    // 关掉插件自带的“保存时自动格式化”，避免和 Prettier 抢顺序
-    // 通过快捷键 Alt+Shift+S 手动格式化 import 导入
-    "tsImportSorter.configuration.autoFormat": "off",
     "editor.codeActionsOnSave": {
         "source.fixAll.prettier": "explicit"
     },
+    // 自动导入模块时优先使用 tsconfig/jsconfig 中 paths 定义的别名（如 @/utils/xxx），
+    "js/ts.preferences.importModuleSpecifier": "non-relative",
+    // 自动导入路径末尾尽量精简：省略文件扩展名（.ts/.js 等），
+    // 但保留目录末尾的 /（如 @/utils/xxx 而不是 @/utils/xxx.ts）
+    "js/ts.preferences.importModuleSpecifierEnding": "minimal",
     "cSpell.words": [
         "addin",
+        "baijiaxing",
         "esbuild",
         "jsaddons",
         "jsapi",
+        "jsplugin",
+        "jspluginonline",
         "jsplugins",
         "kingsoft",
+        "kwps",
         "lefthook",
+        "nums",
         "pagenum",
-        "radash",
+        "picklist",
+        "predev",
+        "prepreview",
+        "punct",
+        "Puncts",
         "screentip",
         "supertip",
         "taskpane",
         "vite",
         "vitest",
         "vnode",
+        "vueuse",
         "wpsjs",
+        "wpsoffice",
+        "wyxin",
         "zdoc"
     ]
 }
