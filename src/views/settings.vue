@@ -30,7 +30,8 @@ import { ElMessage } from "element-plus";
 import FooterSection from "@/components/FooterSection.vue";
 import HeaderSection from "@/components/HeaderSection.vue";
 import { useConfigFile } from "@/composables/useConfigFile";
-import { useFooterActions, useHeaderActions } from "@/composables/useHeaderActions";
+import { useFooterActions } from "@/composables/useFooterActions";
+import { useHeaderActions } from "@/composables/useHeaderActions";
 import { usePageActions } from "@/composables/usePageActions";
 import { useTypographyActions } from "@/composables/useTypographyActions";
 
