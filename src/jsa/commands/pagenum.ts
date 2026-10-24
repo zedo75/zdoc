@@ -102,14 +102,19 @@ function removeFooterShape(footer: Wps.HeaderFooter) {
         }
     }
 }
+
+const PAGENUM_FIELD_TYPES = [wdFieldPage, wdFieldNumPages, wdFieldSectionPages];
+
 /**
  * 清理指定页脚中的所有页码内容。
  *
- * 如果未传入页脚，则使用当前文档第一节的主页脚。
- * @param footer - 可选，目标页脚。若未提供，则使用默认主页脚。
+ * 兼容三种来源：
+ * 1. 本工具插入的 "ZdocPagenumBox" 文本框页码
+ * 2. 用户手动插入的文本框页码
+ * 3. WPS 内置 "插入页码" 生成的 Page/NumPages/SectionPages 域
  */
 export function removePagenum(doc: Wps.Document = ActiveDocument): void {
-    // 三种页脚类型（与页眉一致）
+    // 三种页脚类型
     const footerTypes = [
         wdHeaderFooterPrimary, // 主页脚
         wdHeaderFooterFirstPage, // 首页页脚
@@ -118,26 +123,43 @@ export function removePagenum(doc: Wps.Document = ActiveDocument): void {
 
     for (let i = 1; i <= doc.Sections.Count; i++) {
         const section = doc.Sections.Item(i);
-        footerTypes.forEach((type) => {
+        for (const type of footerTypes) {
             try {
                 const footer = section.Footers.Item(type);
-                if (!footer) return;
+                if (!footer) continue;
+
+                // ① 删除 shape 中的页码文本框（本工具或用户手动加的）
                 removeFooterShape(footer);
+
+                // ② 删除 Range 中的页码域 —— 这是之前漏掉的关键步骤
+                //    footer.Range.Text = "" 删不掉域本身，必须显式 Delete
+                const fields = footer.Range.Fields;
+                for (let j = fields.Count; j >= 1; j--) {
+                    try {
+                        const f = fields.Item(j);
+                        if (PAGENUM_FIELD_TYPES.includes(Number(f.Type))) {
+                            f.Delete();
+                        }
+                    } catch {
+                        // 某个域访问异常，跳过
+                    }
+                }
+
+                // ③ 清空残留可见文本（域删除后剩余的分隔符、空格等）
                 footer.Range.Text = "";
-            } catch (e) {}
-        });
+            } catch {
+                // 页脚不可访问（如首页不同但未启用等），跳过
+            }
+        }
     }
 }
 
 /**
  * 检测文档是否存在页码（同时检查页脚正文域和文本框中的页码域）
- * @returns boolean
  */
-export function hasPagenum(): boolean {
-    const doc = Application.ActiveDocument;
+export function hasPagenum(doc: Wps.Document = Application.ActiveDocument): boolean {
     if (!doc) return false;
 
-    // 遍历所有节
     for (let i = 1; i <= doc.Sections.Count; i++) {
         const section = doc.Sections.Item(i);
         const footer = section.Footers.Item(wdHeaderFooterPrimary);
@@ -146,45 +168,27 @@ export function hasPagenum(): boolean {
         // 1. 检查页脚正文中的页码域
         const fields = footer.Range.Fields;
         for (let j = 1; j <= fields.Count; j++) {
-            if (fields.Item(j).Type === wdFieldPage) {
-                return true;
-            }
+            if (PAGENUM_FIELD_TYPES.includes(Number(fields.Item(j).Type))) return true;
         }
 
         // 2. 检查页脚中所有文本框内的页码域
         const shapes = footer.Shapes;
         for (let s = 1; s <= shapes.Count; s++) {
-            const shape = shapes.Item(s);
             try {
-                const textRange = shape.TextFrame?.TextRange;
+                const textRange = shapes.Item(s).TextFrame?.TextRange;
                 if (!textRange) continue;
                 const shapeFields = textRange.Fields;
                 for (let f = 1; f <= shapeFields.Count; f++) {
-                    if (shapeFields.Item(f).Type === wdFieldPage) {
+                    if (PAGENUM_FIELD_TYPES.includes(Number(shapeFields.Item(f).Type))) {
                         return true;
                     }
                 }
             } catch {
                 // 忽略没有文本框的形状
-                continue;
             }
         }
     }
     return false;
-}
-
-/**
- * 在指定页脚中查找自定义页码文本框（通过固定名称）
- */
-function findPagenumShape(footer: Wps.HeaderFooter): Wps.Shape | null {
-    const shapes = footer.Shapes;
-    for (let i = 1; i <= shapes.Count; i++) {
-        const shape = shapes.Item(i);
-        if (shape.Name === "ZdocPagenumBox") {
-            return shape;
-        }
-    }
-    return null;
 }
 
 /**
@@ -222,43 +226,22 @@ function createPagenumShape(
 }
 
 /**
- * 更新已有页码文本框的位置和字体（只修改，不重建）
- * @returns 是否成功更新（true 表示找到并更新）
- */
-function updatePagenumShape(
-    shape: Wps.Shape,
-    position: number,
-    font: string,
-    fontSize: number,
-): void {
-    // 重新应用位置和样式（configureShape 会设置 Left、填充等）
-    configureShape(shape, position);
-
-    // 更新字体
-    const textRange = shape.TextFrame.TextRange;
-    textRange.Font.Name = font;
-    textRange.Font.Size = fontSize;
-}
-
-/**
- * 添加或更新页码（存在则更新，不存在则清理后新建）
+ * 添加页码（总是重建）
+ *
+ * 统一走 removePagenum + createPagenumShape，
+ * 保证每次调用都用当前配置完整重设（位置、字体、模板一致）。
  */
 export function addFooterPagenum(config?: FooterConfig, doc: Wps.Document = ActiveDocument): void {
     const finalConfig = { ...DEFAULT_FOOTER_CONFIG, ...config };
 
-    const footer = doc.Sections.Item(1).Footers.Item(wdHeaderFooterPrimary);
+    // 关闭奇偶页不同
+    doc.PageSetup.OddAndEvenPagesHeaderFooter = msoFalse;
 
-    // 确保关闭“奇偶页不同”
-    ActiveDocument.PageSetup.OddAndEvenPagesHeaderFooter = msoFalse;
-
-    const existing = findPagenumShape(footer);
-    const position = mapPosition(finalConfig.position);
-
-    if (existing) {
-        updatePagenumShape(existing, position, finalConfig.font, finalConfig.fontSize);
-        return;
-    }
-
+    // 彻底清除所有页码
     removePagenum(doc);
+
+    // 在第一节主页脚新建页码文本框
+    const footer = doc.Sections.Item(1).Footers.Item(wdHeaderFooterPrimary);
+    const position = mapPosition(finalConfig.position);
     createPagenumShape(footer, position, finalConfig.font, finalConfig.fontSize);
 }
