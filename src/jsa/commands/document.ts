@@ -226,11 +226,20 @@ export function getAttachmentsRangeIndex(doc: Wps.Document = ActiveDocument): Ra
  * @param doc 文档
  */
 export function formatAttachments(doc: Wps.Document = ActiveDocument) {
-    const rangeIndex = getAttachmentsRangesIndex();
+    const rangeIndex = getAttachmentsRangesIndex(doc);
     for (let i = rangeIndex.length - 1; i >= 0; i--) {
         const item = rangeIndex[i];
         const result = handleAttachments(item.text);
         const range = doc.Range(item.startIndex, item.endIndex);
+
+        // 防御：实际读到的文本必须与快照一致，否则坐标仍错位，跳过而不是覆盖
+        if (range.Text !== item.text) {
+            console.warn(
+                `[formatAttachments] 范围错位，已跳过：${item.startIndex}-${item.endIndex}`,
+            );
+            continue;
+        }
+
         // handleAttachments 是幂等性的，因此只需要额外判断缩进是否满足条件
         if (item.text == result.replace(/\n/g, "\r").replace(/\u3000/g, "")) {
             const paras = range.Paragraphs;
