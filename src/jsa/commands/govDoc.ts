@@ -1,7 +1,9 @@
-import type { TypographyConfig } from "@/jsa/types";
+import type { GovDocConfig, TypographyConfig } from "@/jsa/types";
 import type { DocumentStructure } from "@/utils/para-types";
 
-import { formatAttachments } from "@/jsa//commands/document";
+import { formatAttachments, setPageLayout } from "@/jsa//commands/document";
+import { removeAllHeaders, setHeader } from "@/jsa/commands/header";
+import { addFooterPagenum, removePagenum } from "@/jsa/commands/pagenum";
 import { withUndoRecord } from "@/jsa/utils/document";
 import { scope } from "@/jsa/utils/performance";
 import { analyzeDocument, applyModifications, readParaInfos } from "@/utils/para-pipeline";
@@ -266,4 +268,39 @@ export function quickFormat(
             scope("附件处理", () => formatAttachments(doc));
         }),
     );
+}
+
+/**
+ * 完整排版：页边距 → 页眉 → 页码（先删后加）→ 正文排版
+ *
+ * quickFormat 只覆盖 mainStory，页边距/页眉/页码不在其作用域内。
+ * 本函数供"一键排版"和"批量排版"复用，保证两种入口行为一致。
+ */
+export function applyFullFormat(config: GovDocConfig, doc: Wps.Document = ActiveDocument) {
+    scope("页边距", () => setPageLayout(config.pageLayout, doc));
+
+    scope("页眉", () => {
+        removeAllHeaders(doc);
+        if (config.header?.content) {
+            setHeader(
+                config.header.content,
+                config.header.position,
+                config.header.font,
+                config.header.fontSize,
+                doc,
+            );
+        }
+    });
+
+    scope("页码", () => {
+        try {
+            removePagenum(doc);
+        } catch {
+            // 没有页码时 removePagenum 的 COM 操作可能抛错，忽略
+        }
+        addFooterPagenum(config.footer, doc);
+    });
+
+    // quickFormat 内部已含 withUndoRecord
+    scope("正文排版", () => quickFormat(config.typography, doc));
 }
