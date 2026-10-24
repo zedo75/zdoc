@@ -1,4 +1,4 @@
-import { refreshDocumentView, withUndoRecord } from "../utils/document";
+import { refreshDocumentView, withUndoRecord } from "@/jsa/utils/document";
 
 /** 生成唯一书签名（≤ 40 字符） */
 export function generateBookmarkName(prefix = "zdoc"): string {
