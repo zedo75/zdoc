@@ -3,14 +3,7 @@
         <div class="grid grid-cols-2 gap-4">
             <div class="flex items-center">
                 <label class="text-sm font-medium text-gray-700">字体：</label>
-                <el-select v-model="footer.font" size="small" class="flex-1">
-                    <el-option
-                        v-for="opt in chineseFontOptions"
-                        :key="opt.value"
-                        :label="opt.label"
-                        :value="opt.value"
-                    />
-                </el-select>
+                <FontPicker v-model="footer.font" class="flex-1"></FontPicker>
             </div>
 
             <FontSizeInput v-model="footer.fontSize" :step="0.5" />
@@ -47,7 +40,6 @@
 <script setup lang="ts">
 import type { FooterConfig } from "@/jsa/types";
 
-import { useFonts } from "@/composables/useFonts";
 import { useGovDocConfig } from "@/stores/govDocConfig";
 
 type PagenumPosition = FooterConfig["position"];
@@ -72,5 +64,4 @@ const PAGENUM_POSITIONS: PositionOption[] = [
 ];
 
 const { footer } = useGovDocConfig();
-const { chineseFontOptions } = useFonts();
 </script>

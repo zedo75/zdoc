@@ -1,6 +1,12 @@
 <template>
     <el-select v-model="model" size="small" filterable style="width: 100%">
-        <el-option v-for="opt in options" :key="opt.value" :label="opt.label" :value="opt.value" />
+        <el-option
+            v-for="opt in options"
+            :key="opt.value"
+            :label="opt.label"
+            :value="opt.value"
+            :style="{ 'font-family': opt.value }"
+        />
     </el-select>
 </template>
 

@@ -33,14 +33,7 @@
 
             <div class="flex items-center">
                 <label class="text-sm font-medium text-gray-700">字体：</label>
-                <el-select v-model="header.font" size="small" filterable class="flex-1">
-                    <el-option
-                        v-for="opt in chineseFontOptions"
-                        :key="opt.value"
-                        :label="opt.label"
-                        :value="opt.value"
-                    />
-                </el-select>
+                <FontPicker v-model="header.font" class="flex-1"></FontPicker>
             </div>
 
             <FontSizeInput v-model="header.fontSize" />
@@ -63,7 +56,6 @@
 <script setup lang="ts">
 import type { HeaderConfig } from "@/jsa/types";
 
-import { useFonts } from "@/composables/useFonts";
 import { useGovDocConfig } from "@/stores/govDocConfig";
 
 type HeaderPosition = HeaderConfig["position"];
@@ -75,7 +67,6 @@ const HEADER_POSITIONS: { label: string; value: HeaderPosition }[] = [
 ];
 
 const { header } = useGovDocConfig();
-const { chineseFontOptions } = useFonts();
 
 const CLASSIFICATION_PRESETS = ["内部★注意保管", "秘密★1年", "机密★5年", "绝密★长期"];
 
