@@ -20,11 +20,21 @@ import type {
 import { name as SURNAME_ARR } from "@wyxin/baijiaxing";
 
 import {
+    ALL_WHITESPACE_REGEX,
     ATTACHMENT_LINE_PREFIX_REGEX,
+    BOOK_TITLE_MARK_REGEX,
+    BYLINE_END_FORBIDDEN_REGEX,
+    CLAUSE_SEPARATOR_REGEX,
+    COLON_END_REGEX,
+    DOC_TITLE_FORBIDDEN_PUNCT_REGEX,
     DOC_TITLE_KIND_REGEX,
     ETHNIC_NAME_REGEX,
+    FORM_FEED,
+    FORM_FEED_PARA,
+    H1_PREFIX_REGEX,
     H1_REGEX,
     H2_REGEX,
+    H2_TITLE_FORBIDDEN_FORMAT_REGEX,
     H3_REGEX,
     INLINE_DRAFT_PAREN_REGEX,
     LETTERHEAD_FORBIDDEN_REGEX,
@@ -33,6 +43,8 @@ import {
     LIST_ITEM_PAREN_HAN_REGEX,
     LIST_ITEM_PAREN_NUM_REGEX,
     MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX,
+    NEWLINE_REGEX,
+    PARA_MARK,
     PLAIN_NAME_REGEX,
     SALUTATION_EACH_UNIT_REGEX,
     SALUTATION_EXCLUDE_REGEX,
@@ -41,9 +53,13 @@ import {
     SALUTATION_ORG_DEPT_REGEX,
     SALUTATION_REGEX,
     SIGNATURE_DATE_REGEX,
+    SIGNATURE_UNIT_END_REGEX,
+    SUBTITLE_DASH_PREFIX,
     SUBTITLE_PAREN_ORDINAL_REGEX,
     SUBTITLE_PAREN_REGEX,
+    TABLE_CELL_MARK,
     TOPIC_REGEX,
+    TRAILING_PARA_MARK_REGEX,
 } from "@/utils/para-patterns";
 
 // ==================== 抬头判定辅助 ====================
@@ -59,7 +75,7 @@ import {
  */
 export function isLikelySalutation(text: string): boolean {
     if (SALUTATION_EXCLUDE_REGEX.test(text)) return false;
-    const words = text.replace(/\r$/, "").split("、");
+    const words = text.replace(TRAILING_PARA_MARK_REGEX, "").split("、");
     const patterns = [
         SALUTATION_ORG_DEPT_REGEX,
         SALUTATION_EACH_UNIT_REGEX,
@@ -76,7 +92,9 @@ export function isLikelySalutation(text: string): boolean {
  */
 function getHeadingPart(text: string): string {
     const firstPeriod = text.indexOf("。");
-    return firstPeriod >= 0 ? text.slice(0, firstPeriod) : text.replace(/\r$/, "");
+    return firstPeriod >= 0
+        ? text.slice(0, firstPeriod)
+        : text.replace(TRAILING_PARA_MARK_REGEX, "");
 }
 
 /**
@@ -88,11 +106,8 @@ function getHeadingPart(text: string): string {
  * 不能退化为统计整段。
  */
 function countSeparatorsBeforePeriod(text: string): number {
-    return (getHeadingPart(text).match(/[，、]/g) || []).length;
+    return (getHeadingPart(text).match(CLAUSE_SEPARATOR_REGEX) || []).length;
 }
-
-/** 一级标题编号前缀（`一、`…`十九、`）；`、` 是编号分隔符，不计入分隔符统计 */
-const H1_PREFIX_REGEX = /^[一二三四五六七八九十]+、/;
 
 /**
  * 段落是 h1 候选（满足 H1_REGEX 且第一个句号前 `，`/`、` 少于 2 个）。
@@ -126,8 +141,8 @@ export function isLikelyH1(text: string): boolean {
 export function isLikelyH2(text: string): boolean {
     if (!H2_REGEX.test(text)) return false;
     const heading = getHeadingPart(text);
-    if (/[：:@]/.test(heading)) return false;
-    if (/[《》]/.test(heading) || INLINE_DRAFT_PAREN_REGEX.test(heading)) return false;
+    if (H2_TITLE_FORBIDDEN_FORMAT_REGEX.test(heading)) return false;
+    if (BOOK_TITLE_MARK_REGEX.test(heading) || INLINE_DRAFT_PAREN_REGEX.test(heading)) return false;
     return countSeparatorsBeforePeriod(text) < 2;
 }
 
@@ -199,7 +214,7 @@ export function isLikelySubtitle(text: string): boolean {
     const t = text.trim();
     return (
         (SUBTITLE_PAREN_REGEX.test(t) && !SUBTITLE_PAREN_ORDINAL_REGEX.test(t)) ||
-        t.startsWith("——")
+        t.startsWith(SUBTITLE_DASH_PREFIX)
     );
 }
 
@@ -216,12 +231,12 @@ const SURNAME_SET = new Set(SURNAME_ARR as unknown as string[]);
 export function isLikelyByline(text: string): boolean {
     const t = text.trim();
     // 排除空串和以句号 / 分号 / 感叹 / 问号结尾的正文句子
-    if (!t || /[。；！？]$/.test(t)) return false;
+    if (!t || BYLINE_END_FORBIDDEN_REGEX.test(t)) return false;
 
     // 普通姓名（2–4 字），走姓氏字典
     const plainMatch = t.match(PLAIN_NAME_REGEX);
     if (plainMatch) {
-        const namePart = plainMatch[2].replace(/[\s\u3000]/g, "");
+        const namePart = plainMatch[2].replace(ALL_WHITESPACE_REGEX, "");
         if (SURNAME_SET.has(namePart[0])) return true;
     }
 
@@ -250,7 +265,7 @@ const LETTERHEAD_MAX_CHARS = 60;
  * @param text 由多个段落拼接、已去掉换行与空白的文本
  */
 export function isLikelyLetterhead(text: string): boolean {
-    const t = text.replace(/[\s\u3000]/g, "");
+    const t = text.replace(ALL_WHITESPACE_REGEX, "");
     if (t.length < 4 || t.length > LETTERHEAD_MAX_CHARS) return false;
     if (LETTERHEAD_FORBIDDEN_REGEX.test(t)) return false;
     return LETTERHEAD_ORG_TAIL_REGEX.test(t);
@@ -268,8 +283,8 @@ export function isLikelyLetterhead(text: string): boolean {
  * @param text 由多个段落拼接、已去掉换行与空白的文本
  */
 export function isLikelyDocTitle(text: string): boolean {
-    const t = text.replace(/[\s\u3000]/g, "");
-    if (/[。；！？，：]/.test(t)) return false;
+    const t = text.replace(ALL_WHITESPACE_REGEX, "");
+    if (DOC_TITLE_FORBIDDEN_PUNCT_REGEX.test(t)) return false;
     return t.includes("关于") || DOC_TITLE_KIND_REGEX.test(t);
 }
 
@@ -288,14 +303,14 @@ export function isLikelyDocTitle(text: string): boolean {
  */
 export function parsePlainTextToParas(raw: string): PlainParaInfo[] {
     // 统一换行：Word 内部用 \r，输入的 \n 也要转为 \r 行为一致
-    const normalized = raw.replace(/\r\n|\r|\n/g, "\r");
+    const normalized = raw.replace(NEWLINE_REGEX, PARA_MARK);
     // 以 \r 拆分，但保留每个段尾的 \r（最后一段如果没有 \r 也要补上，便于后续正则一致）
-    const parts = normalized.split("\r");
+    const parts = normalized.split(PARA_MARK);
     // "a\rb\r".split("\r") → ["a", "b", ""]；要过滤最后一个空段（除非输入只有 "\r"）
     const paras: string[] = [];
     for (let i = 0; i < parts.length; i++) {
         if (i === parts.length - 1 && parts[i] === "") continue;
-        paras.push(parts[i] + "\r");
+        paras.push(parts[i] + PARA_MARK);
     }
 
     return paras.map((text) => {
@@ -322,12 +337,12 @@ export function computePlainParaInfo(text: string): Omit<PlainParaInfo, "isSkipp
     return {
         text,
         // isEmpty：真空行，不含换页符
-        isEmpty: trimmed === "" && !text.includes("\f"),
+        isEmpty: trimmed === "" && !text.includes(FORM_FEED),
         isAttachment: ATTACHMENT_LINE_PREFIX_REGEX.test(trimmed),
         // 只有 \f 后紧跟 \r 才算分页符；A\fB 忽略
-        hasFormFeed: /\f\r/.test(text),
+        hasFormFeed: text.includes(FORM_FEED_PARA),
         hasForbidden: MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX.test(trimmed),
-        isTable: text.includes("\x07"),
+        isTable: text.includes(TABLE_CELL_MARK),
         isHeading: false, // 由 analyze 阶段填
         isInRange: true,
     };
@@ -643,7 +658,7 @@ export function analyzeDocumentStructure(
                     break;
                 }
                 // 防御：若段落以句末标点（含冒号）结尾，则视为正文，不是发文机关
-                if (/[。！？；：]$/.test(q.text.trim())) break;
+                if (SIGNATURE_UNIT_END_REGEX.test(q.text.trim())) break;
                 unitIndices.unshift(prev);
                 prev--;
             }
@@ -688,9 +703,9 @@ const LETTERHEAD_MAX_LINES = 4;
 function joinBlockText(paraInfos: StructuredParaInfo[], start: number, end: number): string {
     let text = "";
     for (let i = start; i <= end; i++) {
-        text += paraInfos[i].text.replace(/\r$/, "");
+        text += paraInfos[i].text.replace(TRAILING_PARA_MARK_REGEX, "");
     }
-    return text.replace(/[\s\u3000]/g, "");
+    return text.replace(ALL_WHITESPACE_REGEX, "");
 }
 
 /**
@@ -778,7 +793,7 @@ type PrevSignal = "docStart" | "divider" | "other";
  * 的形态完全相同，若当作终止段会把落款单位误升为主标题。
  */
 function isMainTitleBlockTerminator(p: StructuredParaInfo): boolean {
-    return p.semanticKinds.has("salutation") || /[：:]\r?$/.test(p.text);
+    return p.semanticKinds.has("salutation") || COLON_END_REGEX.test(p.text);
 }
 
 /**
@@ -874,7 +889,7 @@ export function computeTitleSubRanges(
 
     // 若匹配包含段尾 \r，从子范围中排除（避免覆盖段落标记）
     const matched = match[0];
-    const length = matched.endsWith("\r") ? matched.length - 1 : matched.length;
+    const length = matched.endsWith(PARA_MARK) ? matched.length - 1 : matched.length;
     if (length <= 0) return undefined;
 
     const sub: SubRangeMod = { start: match.index, length };

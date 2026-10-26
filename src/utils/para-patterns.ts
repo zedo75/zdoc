@@ -5,6 +5,29 @@
  * 不包含任何逻辑、类型或副作用。
  */
 
+// ==================== 段落标记 / 空白 ====================
+
+/** 段落标记（WPS `Range.Text` 中每段以 `\r` 结尾） */
+export const PARA_MARK = "\r";
+
+/** 段尾段落标记：去掉段末 `\r` 时使用（只匹配结尾，不带 g） */
+export const TRAILING_PARA_MARK_REGEX = /\r$/;
+
+/** 换页符本身（`\f`）；`isEmpty` 判定要把它排除在空行之外 */
+export const FORM_FEED = "\f";
+
+/** 换页符独占一段时的形态：`\f` 后紧跟 `\r`；`A\fB` 不算分页符 */
+export const FORM_FEED_PARA = "\f\r";
+
+/** 表格单元格标记（Word `\x07`）；段落含它说明位于表格内 */
+export const TABLE_CELL_MARK = "\x07";
+
+/** 任意空白（含全角空格）——版头 / 标题 / 署名等紧凑比较时统一去掉 */
+export const ALL_WHITESPACE_REGEX = /[\s\u3000]/g;
+
+/** 任意换行（CRLF / CR / LF）——纯文本归一为 `\r` 时使用 */
+export const NEWLINE_REGEX = /\r\n|\r|\n/g;
+
 // ==================== 标题与结构 ====================
 
 // 注意：同段内有多个需要匹配的才加 g 标志
@@ -28,12 +51,21 @@ export const SALUTATION_REGEX = /^[^《》〔〕：]*：\r$/;
  */
 export const H1_REGEX = /^(?![\s\S]*[；;]\r?$)[一二三四五六七八九十]+、.*?(?:。|[^；;]\r)/;
 
+/** 一级标题编号前缀（`一、`…`十九、`）；`、` 是编号分隔符，不计入分隔符统计 */
+export const H1_PREFIX_REGEX = /^[一二三四五六七八九十]+、/;
+
 /**
  * 二级标题：（一）（二）……。
  *
  * 结尾约定同 H1_REGEX（分号结尾不视为标题）。
  */
 export const H2_REGEX = /^(?![\s\S]*[；;]\r?$)（[一二三四五六七八九十]+）.*?(?:。|[^；;]\r)/;
+
+/** h2 标题部分禁止出现的正文格式符：冒号 / 半角冒号 / @（如「邮箱：a@b.com」） */
+export const H2_TITLE_FORBIDDEN_FORMAT_REGEX = /[：:@]/;
+
+/** 书名号：h2 标题部分出现书名号时多为「审议某文件」的条目，不是小节标题 */
+export const BOOK_TITLE_MARK_REGEX = /[《》]/;
 
 /**
  * - `(?!.*：)` 为先行断言，见以下链接
@@ -61,6 +93,14 @@ export const H3_REGEX = /^(?!.*(?:：|\u2005))[0-9]{1,2}\..{1,23}?(?:。|[^；;]
  */
 export const H3_REGEX =
     /^(?![\s\S]*[；;]\r?$)[0-9]{1,2}\.(?!\d)[^：\u2005\r]{1,23}?(?:。|[^；;]\r)/;
+
+/**
+ * 标题简洁性：首句号前的并列分隔符（逗号 / 顿号）。
+ *
+ * 出现 2 个及以上说明是并列描述而不是标题（h1 / h2 / h3 共用）。
+ * 注意带 g，仅用于 `String.match`，不要直接用于 `.test`。
+ */
+export const CLAUSE_SEPARATOR_REGEX = /[，、]/g;
 
 /**
  * 段内小标题：一是…。 / 二要…。
@@ -94,6 +134,9 @@ export const LIST_ITEM_PAREN_NUM_REGEX = /^（[0-9]{1,2}）/;
  */
 export const MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX = /[。；！？【】〖〗_=|{}<>#&~$^*※\[\]\\]/;
 
+/** 主标题块终止段：以冒号结尾的导语（如「现将有关事项通知如下：」） */
+export const COLON_END_REGEX = /[：:]\r?$/;
+
 // ==================== 版头（红头） ====================
 
 /**
@@ -104,6 +147,14 @@ export const MAIN_TITLE_FORBIDDEN_SYMBOLS_REGEX = /[。；！？【】〖〗_=|{
  */
 export const DOC_TITLE_KIND_REGEX =
     /(?:通知|通报|报告|请示|批复|意见|决定|决议|命令|函|纪要|公告|通告|方案|办法|规定|细则|规划|计划|要点|总结|讲话|致辞|汇报|说明|答复|建议|议案|条例|准则|规则|简报)(?:（[^（）]*）)?$/;
+
+/**
+ * 公文标题中不允许出现的句读。
+ *
+ * 用于「版头后必须跟标题」的前瞻：正文里的「关于……」很常见，
+ * 但标题不会带句读，含句读说明是正文而不是标题。
+ */
+export const DOC_TITLE_FORBIDDEN_PUNCT_REGEX = /[。；！？，：]/;
 
 /**
  * 发文机关名称的常见结尾。
@@ -149,6 +200,11 @@ export const SUBTITLE_DOC_NUMBER_REGEX = /^（[^\s]{2,6}\u3014\d{4}\u3015\d+号�
 export const SUBTITLE_BRACKET_DATE_REGEX =
     /^（[0-9xX]{4}年[0-9xX \u3000]{1,2}月[0-9xX \u3000]{1,2}日）$/;
 
+/** 副标题：破折号开头（引题 / 副题），如「——在XX会议上的讲话」 */
+export const SUBTITLE_DASH_PREFIX = "——";
+
+// ==================== 署名相关 ====================
+
 /**
  * 普通姓名：末尾 2+ 半角空格 或 1+ 全角空格 后跟 2–4 汉字，字间可含空格
  * （兼容「李  四」）。
@@ -166,6 +222,9 @@ export const PLAIN_NAME_REGEX =
  */
 export const ETHNIC_NAME_REGEX =
     /^(.+?)(?: {2,}|\u3000+)([\u4e00-\u9fa5]{1,8}(?:\u00B7[\u4e00-\u9fa5]{1,8}){1,2})$/;
+
+/** 署名行判定：以句末标点结尾说明是正文句子，不能当署名 */
+export const BYLINE_END_FORBIDDEN_REGEX = /[。；！？]$/;
 
 // ==================== 附件相关 ====================
 
@@ -221,6 +280,9 @@ export const SALUTATION_GREETING_REGEX = /尊敬的|敬爱的|亲爱的|同志�
 export const SALUTATION_JOB_TITLE_REGEX = /副?书记|副?主任|副?参谋长|副?政委/;
 
 // ==================== 落款 ====================
+
+/** 落款单位行扫描：遇到句末标点（含冒号）说明已进入正文，停止向上收集 */
+export const SIGNATURE_UNIT_END_REGEX = /[。！？；：]$/;
 
 /**
  * 落款成文日期。
