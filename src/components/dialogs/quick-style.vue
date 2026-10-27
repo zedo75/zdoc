@@ -113,7 +113,6 @@
 </template>
 
 <script setup lang="ts">
-import { refreshDocumentView } from "@/jsa/utils/document";
 import {
     setFontAsciiToEast,
     setFontFS,
@@ -124,6 +123,7 @@ import {
     setFontSize,
     setLineExactly,
 } from "@/jsa/utils/styles";
+import { refreshDocumentView } from "@/jsa/utils/wpsDocument";
 import {
     FONT_SIZE_FOUR,
     FONT_SIZE_THREE,

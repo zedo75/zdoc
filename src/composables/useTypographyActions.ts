@@ -2,7 +2,7 @@ import { ElMessage } from "element-plus";
 
 import { DEFAULT_TYPO_CONFIG } from "@/config/defaults";
 import { setupBodyStyle, setupTitleStyle } from "@/jsa/commands/govDoc";
-import { withUndoRecord } from "@/jsa/utils/document";
+import { withUndoRecord } from "@/jsa/utils/wpsDocument";
 import { useGovDocConfig } from "@/stores/govDocConfig";
 
 export function useTypographyActions() {

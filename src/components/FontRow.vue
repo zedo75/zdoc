@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import type { SimpleFontConfig } from "@/jsa/types/index.js";
+import type { SimpleFontConfig } from "@/config/types";
 
 import FontPicker from "@/components/FontPicker.vue";
 

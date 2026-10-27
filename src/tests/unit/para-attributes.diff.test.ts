@@ -1,5 +1,5 @@
 import { DEFAULT_TYPO_CONFIG } from "@/config/defaults";
-import { computeModifications } from "@/utils/para-attributes";
+import { computeModifications } from "@/core/attributes";
 
 import { TestDoc } from "../helpers/doc-test";
 import { SMALL_NOTICE_LINES } from "../helpers/fixtures";

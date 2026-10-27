@@ -3,7 +3,7 @@ import { ref } from "vue";
 
 import { DEFAULT_FOOTER_CONFIG } from "@/config/defaults";
 import { addFooterPagenum, hasPagenum, removePagenum } from "@/jsa/commands/pagenum";
-import { refreshDocumentView } from "@/jsa/utils/document";
+import { refreshDocumentView } from "@/jsa/utils/wpsDocument";
 import { useGovDocConfig } from "@/stores/govDocConfig";
 
 export function useFooterActions() {

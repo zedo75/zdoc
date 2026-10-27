@@ -1,6 +1,6 @@
-import type { TypographyConfig } from "@/jsa/types";
+import type { TypographyConfig } from "@/config/types";
 
-import { withUndoRecord } from "@/jsa/utils/document";
+import { withUndoRecord } from "@/jsa/utils/wpsDocument";
 import { useGovDocConfig } from "@/stores/govDocConfig";
 
 export function makeFarEastStyle(fontGetter: (config: TypographyConfig) => string, size?: number) {

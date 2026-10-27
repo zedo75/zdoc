@@ -1,4 +1,4 @@
-import { refreshDocumentView, withUndoRecord } from "@/jsa/utils/document";
+import { refreshDocumentView, withUndoRecord } from "@/jsa/utils/wpsDocument";
 
 /** 生成唯一书签名（≤ 40 字符） */
 export function generateBookmarkName(prefix = "zdoc"): string {

@@ -2,7 +2,7 @@ import {
     refreshDocumentView,
     refreshMailMergeDataView,
     withUndoRecord,
-} from "@/jsa/utils/document";
+} from "@/jsa/utils/wpsDocument";
 
 // 创建文本框，放入字符串后复制再删除
 export function copyText(text: string) {

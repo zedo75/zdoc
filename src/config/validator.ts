@@ -4,7 +4,7 @@ import type {
     HeaderConfig,
     PageLayoutConfig,
     TypographyConfig,
-} from "@/jsa/types";
+} from "@/config/types";
 
 import * as v from "valibot";
 

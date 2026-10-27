@@ -1,14 +1,14 @@
-import type { TypographyConfig } from "@/jsa/types";
+import type { TypographyConfig } from "@/config/types";
 import type {
     DocumentStructure,
     ParagraphSemanticKind,
     ParaModification,
     StructuredParaInfo,
     SubRangeMod,
-} from "@/utils/para-types";
+} from "@/core/types";
 
 import { DEFAULT_TYPO_CONFIG } from "@/config/defaults";
-import { analyzePlainText } from "@/utils/para-pipeline";
+import { analyzePlainText } from "@/core/pipeline";
 
 /**
  * 测试文档包装器：把 `analyzePlainText` 的返回值翻译成排版语义。

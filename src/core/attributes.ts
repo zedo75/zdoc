@@ -11,17 +11,17 @@
  * 2. 新增一个属性时，只需在 `ATTRS` 数组加一项，无需修改其他任何函数。
  * 3. 本模块不依赖 WPS COM 的具体类型，靠 `SnapshotReader` 接口解耦，便于 vitest 单测。
  */
-import type { TypographyConfig } from "@/jsa/types";
+import type { TypographyConfig } from "@/config/types";
 import type {
     DesiredCtx,
     ParaAttrValues,
     ParaModification,
     StructuredParaInfo,
     SubRangeMod,
-} from "@/utils/para-types";
+} from "@/core/types";
 
-import { computeTitleSubRanges, computeTopicBoldRanges } from "@/utils/para-analysis";
-import { H1_REGEX, H2_REGEX, H3_REGEX } from "@/utils/para-patterns";
+import { computeTitleSubRanges, computeTopicBoldRanges } from "@/core/analysis";
+import { H1_REGEX, H2_REGEX, H3_REGEX } from "@/core/patterns";
 
 // ==================== 属性描述符 ====================
 

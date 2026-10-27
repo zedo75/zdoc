@@ -1,4 +1,4 @@
-import { showFolderPicker } from "@/jsa/utils/document";
+import { showFolderPicker } from "@/jsa/utils/wpsDocument";
 import { cmToPoints } from "@/utils/typo";
 
 /**

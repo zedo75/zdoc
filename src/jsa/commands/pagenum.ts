@@ -1,4 +1,4 @@
-import type { FooterConfig } from "@/jsa/types";
+import type { FooterConfig } from "@/config/types";
 
 import { DEFAULT_FOOTER_CONFIG } from "@/config/defaults";
 

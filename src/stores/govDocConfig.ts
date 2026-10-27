@@ -8,7 +8,7 @@ import {
     getDefaultConfigFull,
 } from "@/config/defaults";
 import { validateGovDocConfig } from "@/config/validator";
-import { loadGovDocConfigFromFile, saveGovDocConfigToFile } from "@/jsa/utils/filesSystem";
+import { loadGovDocConfigFromFile, saveGovDocConfigToFile } from "@/jsa/utils/fileSystem";
 
 const KEY = {
     typo: "zdoc:typo",

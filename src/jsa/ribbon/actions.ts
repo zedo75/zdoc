@@ -15,7 +15,7 @@ import {
     openWpsChangeCaseDialog,
 } from "@/jsa/commands/punctuation";
 import { toggleTaskPane } from "@/jsa/ribbon/taskPane";
-import { withUndoRecord } from "@/jsa/utils/document";
+import { withUndoRecord } from "@/jsa/utils/wpsDocument";
 import {
     setFontAsciiToEast,
     setFontFS,

@@ -1,7 +1,7 @@
 import { computed, ref } from "vue";
 
 import { getCurrentRecordNumber, getRecordCount, gotoRecord } from "@/jsa/commands/mergeMail";
-import { refreshMailMergeDataView } from "@/jsa/utils/document";
+import { refreshMailMergeDataView } from "@/jsa/utils/wpsDocument";
 
 /** 对外使用的记录导航方向（避免模板里出现 WPS 枚举） */
 export type RecordDirection = "first" | "previous" | "next" | "last";

@@ -1,5 +1,5 @@
-import type { SnapshotReader } from "@/utils/para-attributes";
-import type { ParaAttrValues } from "@/utils/para-types";
+import type { SnapshotReader } from "@/core/attributes";
+import type { ParaAttrValues } from "@/core/types";
 
 /**
  * 从简化的 attribute 表构造 SnapshotReader。

@@ -2,7 +2,7 @@ import { ElMessage } from "element-plus";
 
 import { DEFAULT_PAGE_LAYOUT_CONFIG } from "@/config/defaults";
 import { setPageLayout } from "@/jsa/commands/document";
-import { refreshDocumentView } from "@/jsa/utils/document";
+import { refreshDocumentView } from "@/jsa/utils/wpsDocument";
 import { useGovDocConfig } from "@/stores/govDocConfig";
 
 export function usePageActions() {

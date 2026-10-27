@@ -10,8 +10,8 @@
  *
  * 本文件是唯一直接面对 `Wps.Document` 的模块。
  */
-import type { TypographyConfig } from "@/jsa/types";
-import type { SnapshotReader } from "@/utils/para-attributes";
+import type { TypographyConfig } from "@/config/types";
+import type { SnapshotReader } from "@/core/attributes";
 import type {
     ComParaInfo,
     DesiredCtx,
@@ -19,14 +19,14 @@ import type {
     ParaAttrValues,
     ParaModification,
     SkipRange,
-} from "@/utils/para-types";
+} from "@/core/types";
 
 import {
     analyzeDocumentStructure,
     computePlainParaInfo,
     parsePlainTextToParas,
-} from "@/utils/para-analysis";
-import { ATTR_BY_KEY, computeModifications } from "@/utils/para-attributes";
+} from "@/core/analysis";
+import { ATTR_BY_KEY, computeModifications } from "@/core/attributes";
 
 // ==================== 书签跳过区间 ====================
 
@@ -224,4 +224,4 @@ export function analyzePlainText(
 }
 
 // re-export 应用函数，方便调用方一处 import
-export { applyModifications } from "@/utils/para-attributes";
+export { applyModifications } from "@/core/attributes";

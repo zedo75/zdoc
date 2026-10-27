@@ -1,7 +1,7 @@
-import type { PageLayoutConfig } from "@/jsa/types";
+import type { PageLayoutConfig } from "@/config/types";
 
 import { DEFAULT_PAGE_LAYOUT_CONFIG } from "@/config/defaults";
-import { ATTACHMENT_LIST_REGEX, ATTACHMENT_LIST_WILDCARDS_PATTERN } from "@/utils/para-patterns";
+import { ATTACHMENT_LIST_REGEX, ATTACHMENT_LIST_WILDCARDS_PATTERN } from "@/core/patterns";
 import { handleAttachments } from "@/utils/typo";
 
 /**

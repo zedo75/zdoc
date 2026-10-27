@@ -4,7 +4,7 @@ import type {
     HeaderConfig,
     PageLayoutConfig,
     TypographyConfig,
-} from "@/jsa/types";
+} from "@/config/types";
 
 /** 默认页面布局配置 */
 export const DEFAULT_PAGE_LAYOUT_CONFIG: PageLayoutConfig = Object.freeze({

@@ -3,9 +3,9 @@ import type {
     ParaGroup,
     PlainParaInfo,
     StructuredParaInfo,
-} from "@/utils/para-types";
+} from "@/core/types";
 
-import { findMainTitleBlocks } from "@/utils/para-analysis";
+import { findMainTitleBlocks } from "@/core/analysis";
 
 import { TestDoc } from "../helpers/doc-test";
 

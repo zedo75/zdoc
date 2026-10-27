@@ -2,7 +2,7 @@ import { ElMessage } from "element-plus";
 
 import { DEFAULT_HEADER_CONFIG } from "@/config/defaults";
 import { removeAllHeaders, setHeader } from "@/jsa/commands/header";
-import { refreshDocumentView } from "@/jsa/utils/document";
+import { refreshDocumentView } from "@/jsa/utils/wpsDocument";
 import { useGovDocConfig } from "@/stores/govDocConfig";
 
 export function useHeaderActions() {

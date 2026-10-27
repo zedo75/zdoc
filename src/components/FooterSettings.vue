@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import type { FooterConfig } from "@/jsa/types";
+import type { FooterConfig } from "@/config/types";
 
 import { useGovDocConfig } from "@/stores/govDocConfig";
 

@@ -9,7 +9,7 @@ import {
     isLikelySalutation,
     isLikelySignatureDate,
     isLikelySubtitle,
-} from "@/utils/para-analysis";
+} from "@/core/analysis";
 
 // ==================== 层级标题简洁性 ====================
 

@@ -1,12 +1,12 @@
-import type { GovDocConfig, TypographyConfig } from "@/jsa/types";
-import type { DocumentStructure } from "@/utils/para-types";
+import type { GovDocConfig, TypographyConfig } from "@/config/types";
+import type { DocumentStructure } from "@/core/types";
 
 import { formatAttachments, setPageLayout } from "@/jsa//commands/document";
 import { removeAllHeaders, setHeader } from "@/jsa/commands/header";
 import { addFooterPagenum, removePagenum } from "@/jsa/commands/pagenum";
-import { withUndoRecord } from "@/jsa/utils/document";
-import { scope } from "@/jsa/utils/performance";
-import { analyzeDocument, applyModifications, readParaInfos } from "@/utils/para-pipeline";
+import { withUndoRecord } from "@/jsa/utils/wpsDocument";
+import { analyzeDocument, applyModifications, readParaInfos } from "@/core/pipeline";
+import { scope } from "@/utils/performance";
 
 /**
  * 设置正文样式，避免频繁地直接操作 Range，优化运行效率

@@ -120,7 +120,7 @@
 
 <script setup lang="ts">
 import FontRow from "@/components/FontRow.vue";
-import { TOPIC_BOLD_MODE_OPTIONS } from "@/jsa/types";
+import { TOPIC_BOLD_MODE_OPTIONS } from "@/config/types";
 import { useGovDocConfig } from "@/stores/govDocConfig";
 
 const { typography } = useGovDocConfig();

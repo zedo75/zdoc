@@ -1,7 +1,7 @@
 import { ElMessage } from "element-plus";
 
 import { insertMergeField } from "@/jsa/commands/mergeMail";
-import { refreshDocumentView } from "@/jsa/utils/document";
+import { refreshDocumentView } from "@/jsa/utils/wpsDocument";
 
 /**
  * 邮件合并 - 字段动作

@@ -54,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import type { HeaderConfig } from "@/jsa/types";
+import type { HeaderConfig } from "@/config/types";
 
 import { useGovDocConfig } from "@/stores/govDocConfig";
 

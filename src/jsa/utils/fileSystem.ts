@@ -1,4 +1,4 @@
-import type { GovDocConfig } from "@/jsa/types";
+import type { GovDocConfig } from "@/config/types";
 
 /**
  * 返回默认配置文件的完整路径。
@@ -94,4 +94,26 @@ export function saveGovDocConfigToFile(config: GovDocConfig): { success: boolean
  */
 export function loadGovDocConfigFromFile(): GovDocConfig | null {
     return loadConfigFromFile<GovDocConfig>(getDefaultConfigPath());
+}
+
+/** 判断路径是否存在；非 WPS 环境或空路径时返回 false */
+export function pathExists(path: string): boolean {
+    if (!path) return false;
+    try {
+        return Application.FileSystem.Exists(path);
+    } catch {
+        return false;
+    }
+}
+
+/** 确保目录存在（不存在则创建） */
+export function ensureDirectory(dir: string): void {
+    if (!dir) return;
+    const fs = Application.FileSystem;
+    if (!fs.Exists(dir)) fs.Mkdir(dir);
+}
+
+/** 删除文件；失败时抛出原始异常，由调用方决定提示文案 */
+export function removeFile(path: string): void {
+    Application.FileSystem.Remove(path);
 }

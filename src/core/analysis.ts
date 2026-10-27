@@ -6,7 +6,7 @@
  * 2. 结构分析输出语义标签：mainTitle / subtitle / salutation / h1 / h2 / h3 等。
  * 3. 不做 COM 操作，不做差异对比，不做属性写入——那些属于上层模块。
  */
-import type { SimpleFontConfig, TopicBoldMode } from "@/jsa/types";
+import type { SimpleFontConfig, TopicBoldMode } from "@/config/types";
 import type {
     DocumentStructure,
     ListKind,
@@ -15,7 +15,7 @@ import type {
     PlainParaInfo,
     StructuredParaInfo,
     SubRangeMod,
-} from "@/utils/para-types";
+} from "@/core/types";
 
 import { name as SURNAME_ARR } from "@wyxin/baijiaxing";
 
@@ -60,7 +60,7 @@ import {
     TABLE_CELL_MARK,
     TOPIC_REGEX,
     TRAILING_PARA_MARK_REGEX,
-} from "@/utils/para-patterns";
+} from "@/core/patterns";
 
 // ==================== 抬头判定辅助 ====================
 

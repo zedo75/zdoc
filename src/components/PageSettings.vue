@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PageLayoutConfig } from "@/jsa/types";
+import type { PageLayoutConfig } from "@/config/types";
 
 import { useGovDocConfig } from "@/stores/govDocConfig";
 

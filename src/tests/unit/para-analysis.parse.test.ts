@@ -1,4 +1,4 @@
-import { parsePlainTextToParas } from "@/utils/para-analysis";
+import { parsePlainTextToParas } from "@/core/analysis";
 
 describe("parsePlainTextToParas 纯文本解析", () => {
     test("支持 \\n / \\r / \\r\\n，且每段尾统一带 \\r", () => {
