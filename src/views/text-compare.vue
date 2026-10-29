@@ -2,12 +2,19 @@
     <div class="flex flex-col h-screen bg-gray-50">
         <el-scrollbar class="flex-1 min-h-0" ref="scrollbarRef">
             <div class="p-2 min-[400px]:p-3 sm:p-5">
-                <div class="mb-3 min-[400px]:mb-4 sm:mb-6 text-center">
+                <div class="relative mb-3 min-[400px]:mb-4 sm:mb-6 text-center">
                     <h1
                         class="text-base min-[400px]:text-lg sm:text-xl font-semibold text-gray-800"
                     >
                         文本对比工具
                     </h1>
+                    <el-button
+                        size="small"
+                        class="absolute right-0 top-1/2 -translate-y-1/2"
+                        @click="openSplitDialog"
+                    >
+                        分屏对比
+                    </el-button>
                 </div>
 
                 <el-collapse v-model="activeNames" :before-collapse="beforeCollapse">
@@ -167,6 +174,8 @@
                             :edit-cost="editCost"
                             @update:duration="onDurationUpdate"
                         />
+                        <!-- <DiffWords :old-text="oldText" :new-text="newText"></DiffWords> -->
+                        <!-- <DiffSplit :old-text="oldText" :new-text="newText"></DiffSplit> -->
                     </el-collapse-item>
                 </el-collapse>
             </div>
@@ -184,13 +193,41 @@
 </template>
 
 <script setup lang="ts">
-import { useDebounceFn } from "@vueuse/core";
+import { StorageSerializers, useDebounceFn, useLocalStorage } from "@vueuse/core";
 import { ElMessage } from "element-plus";
 
+import "vue-diff-text/dist/style.css";
+
 import TextDiff from "@/components/TextDiff.vue";
+import { useDialogTextCompareSize } from "@/composables/useDialogTextCompareSize";
 import { useSelectionBookmark } from "@/composables/useSelectionBookmark";
 import { useSelectionWatcher } from "@/composables/useSelectionWatcher";
 import { getBookmarkText } from "@/jsa/commands/bookmark";
+
+const oldText = useLocalStorage<string>("diff-split:old-text", "", {
+    serializer: StorageSerializers.string,
+});
+const newText = useLocalStorage<string>("diff-split:new-text", "", {
+    serializer: StorageSerializers.string,
+});
+
+const { width: savedWidth, height: savedHeight } = useDialogTextCompareSize();
+
+function openSplitDialog() {
+    if (typeof Application === "undefined") {
+        ElMessage.error("当前环境不支持弹出窗口");
+        return;
+    }
+
+    const base = window.location.origin + window.location.pathname;
+    Application.ShowDialog(
+        `${base}?dialog=text-compare`,
+        "文本分屏对比",
+        savedWidth.value,
+        savedHeight.value,
+        false,
+    );
+}
 
 const EXAMPLE_OLD = `会议指出，各相关部门应认真执行上级部署，确保各项工作任务落到实处。
 会议强调，要加强组织领导，明确责任分工，密切协调配合，形成工作合力。
@@ -200,8 +237,6 @@ const EXAMPLE_NEW = `会议指出，各相关部门要切实提高政治站位�
 会议强调，要健全组织领导机制，细化责任分工，强化协调配合，增强工作合力。
 会议决定，对本次会议确定的重点任务实行清单化管理、项目化推进，定期调度通报进展情况。`;
 
-const oldText = ref("");
-const newText = ref("");
 const cleanupMode = ref<"semantic" | "efficiency" | "none">("semantic");
 const editCost = ref(4);
 const duration = ref(0);

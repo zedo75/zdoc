@@ -93,6 +93,9 @@ importers:
       vitest:
         specifier: ^5.0.5
         version: 5.0.5(@types/node@25.9.9)(vite@8.3.4(@types/node@25.9.9)(jiti@1.21.7)(sass-embedded@1.105.2)(sass@1.105.2)(terser@5.51.2))
+      vue-diff-text:
+        specifier: ^1.6.0
+        version: 1.6.0(vue@3.5.44(typescript@7.0.2))
       wps-jsapi-declare:
         specifier: ^2.2.0
         version: 2.2.0
@@ -2669,6 +2672,11 @@ packages:
   vue-component-type-helpers@3.3.13:
     resolution: {integrity: sha512-02KCxSmKDhIITjKyJ4QT5csP6L0WoRborLqY/34a40+S9uvMvdNgMV0yVjO3p2Gkz3ZoPmFz/0JsGHacwJYTxw==}
 
+  vue-diff-text@1.6.0:
+    resolution: {integrity: sha512-w+7h1hfp4ccopVyjOGV6yuLh6A5xwL7QeL5qPdXG0z6gBknGLxGJ9sMVn4/ZDy19s9x7IxVAOZnGMAVW4gVNVQ==}
+    peerDependencies:
+      vue: ^3.0.0
+
   vue@3.5.44:
     resolution: {integrity: sha512-dvvmaOCG7lAMkJTPqPwWeGMsPS6DIsFsfZDUgBp9V6mHf9b3+/wyVwYR4Es+WV6uJC0FKRxp81Obcq0ZwUcGFQ==}
     peerDependencies:
@@ -5234,6 +5242,10 @@ snapshots:
       - msw
 
   vue-component-type-helpers@3.3.13: {}
+
+  vue-diff-text@1.6.0(vue@3.5.44(typescript@7.0.2)):
+    dependencies:
+      vue: 3.5.44(typescript@7.0.2)
 
   vue@3.5.44(typescript@7.0.2):
     dependencies:

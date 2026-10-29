@@ -51,6 +51,7 @@
         "vite-plugin-bundle-obfuscator": "^1.13.2",
         "vite-plugin-wps-enhance": "workspace:*",
         "vitest": "^5.0.5",
+        "vue-diff-text": "^1.6.0",
         "wps-jsapi-declare": "^2.2.0"
     },
     "engines": {
