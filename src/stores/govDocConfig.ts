@@ -1,4 +1,12 @@
-import { useLocalStorage } from "@vueuse/core";
+import type {
+    FooterConfig,
+    GovDocConfig,
+    HeaderConfig,
+    PageLayoutConfig,
+    TypographyConfig,
+} from "@/config/types";
+
+import { createGlobalState, useLocalStorage } from "@vueuse/core";
 
 import {
     DEFAULT_FOOTER_CONFIG,
@@ -9,6 +17,7 @@ import {
 } from "@/config/defaults";
 import { validateGovDocConfig } from "@/config/validator";
 import { loadGovDocConfigFromFile, saveGovDocConfigToFile } from "@/jsa/utils/fileSystem";
+import { clonePlainData } from "@/utils/clone";
 
 const KEY = {
     typo: "zdoc:typo",
@@ -17,49 +26,78 @@ const KEY = {
     footer: "zdoc:footer",
 } as const;
 
-export function useGovDocConfig() {
-    const typography = useLocalStorage(KEY.typo, DEFAULT_TYPO_CONFIG);
-    const pageLayout = useLocalStorage(KEY.page, DEFAULT_PAGE_LAYOUT_CONFIG);
-    const header = useLocalStorage(KEY.header, DEFAULT_HEADER_CONFIG);
-    const footer = useLocalStorage(KEY.footer, DEFAULT_FOOTER_CONFIG);
+export type LoadFromFileResult = { ok: true } | { ok: false; error: unknown };
 
-    /**
-     * 重置为默认值
-     */
-    const resetToDefault = () => {
-        const def = getDefaultConfigFull();
-        typography.value = def.typography;
-        pageLayout.value = def.pageLayout;
-        header.value = def.header!;
-        footer.value = def.footer!;
+export const useGovDocConfig = createGlobalState(() => {
+    // 默认值用 getter：每次初始化都返回全新对象，避免多实例共享引用。
+    // mergeDefaults: 未来默认结构新增字段时，旧 localStorage 数据会自动合并新字段。
+    const typography = useLocalStorage<TypographyConfig>(
+        KEY.typo,
+        () => clonePlainData(DEFAULT_TYPO_CONFIG),
+        { mergeDefaults: true },
+    );
+    const pageLayout = useLocalStorage<PageLayoutConfig>(
+        KEY.page,
+        () => clonePlainData(DEFAULT_PAGE_LAYOUT_CONFIG),
+        { mergeDefaults: true },
+    );
+    const header = useLocalStorage<HeaderConfig>(
+        KEY.header,
+        () => clonePlainData(DEFAULT_HEADER_CONFIG),
+        { mergeDefaults: true },
+    );
+    const footer = useLocalStorage<FooterConfig>(
+        KEY.footer,
+        () => clonePlainData(DEFAULT_FOOTER_CONFIG),
+        { mergeDefaults: true },
+    );
+
+    /** 把一份完整配置写入响应式状态（唯一写入口） */
+    const applyConfig = (config: GovDocConfig): void => {
+        typography.value = config.typography;
+        pageLayout.value = config.pageLayout;
+        header.value = config.header;
+        footer.value = config.footer;
+    };
+
+    /** 重置为默认值 */
+    const resetToDefault = (): void => {
+        applyConfig(getDefaultConfigFull());
     };
 
     /**
-     * 从文件加载配置
+     * 从文件加载配置。
+     * - 返回 { ok: true }：成功（含文件不存在时回退默认值）
+     * - 返回 { ok: false, error }：读取或校验失败，已自动回退默认值
      */
-    const loadFromFile = () => {
-        const saved = loadGovDocConfigFromFile();
-        if (saved) {
-            try {
-                const validated = validateGovDocConfig(saved);
-                typography.value = validated.typography || { ...DEFAULT_TYPO_CONFIG };
-                pageLayout.value = validated.pageLayout || { ...DEFAULT_PAGE_LAYOUT_CONFIG };
-                header.value = validated.header || { ...DEFAULT_HEADER_CONFIG };
-                footer.value = validated.footer || { ...DEFAULT_FOOTER_CONFIG };
-            } catch (error) {
-                console.warn("配置校验失败，使用默认配置", error);
+    const loadFromFile = (): LoadFromFileResult => {
+        try {
+            const saved = loadGovDocConfigFromFile();
+            if (!saved) {
                 resetToDefault();
+                return { ok: true };
             }
-        } else {
+            const validated = validateGovDocConfig(saved);
+            // 防御性兜底：即使 validator 返回字段不全，也能得到可用配置
+            applyConfig({
+                pageLayout: validated.pageLayout ?? clonePlainData(DEFAULT_PAGE_LAYOUT_CONFIG),
+                typography: validated.typography ?? clonePlainData(DEFAULT_TYPO_CONFIG),
+                header: validated.header ?? clonePlainData(DEFAULT_HEADER_CONFIG),
+                footer: validated.footer ?? clonePlainData(DEFAULT_FOOTER_CONFIG),
+            });
+            return { ok: true };
+        } catch (error) {
+            console.warn("配置加载失败，已重置为默认", error);
             resetToDefault();
+            return { ok: false, error };
         }
     };
 
     /**
-     * 保存到文件
+     * 保存到文件。
      */
     const saveToFile = () => {
-        const config = {
+        const config: GovDocConfig = {
             pageLayout: pageLayout.value,
             typography: typography.value,
             header: header.value,
@@ -78,4 +116,4 @@ export function useGovDocConfig() {
         saveToFile,
         resetToDefault,
     };
-}
+});
