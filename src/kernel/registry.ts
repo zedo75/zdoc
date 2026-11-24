@@ -14,6 +14,7 @@ import type { DialogSpec, FeaturePlugin, PaneSpec } from "./types";
 import { docUtilsFeature } from "@/features/doc-utils";
 import { govDocFeature } from "@/features/gov-doc";
 import { imageToolsFeature } from "@/features/image-tools";
+import { mailMergeFeature } from "@/features/mail-merge";
 import { punctuationFeature } from "@/features/punctuation";
 import { textCompareFeature } from "@/features/text-compare";
 
@@ -27,6 +28,7 @@ import { collectExtensionActionIds } from "./control-ids";
 export const features: FeaturePlugin[] = [
     govDocFeature,
     textCompareFeature,
+    mailMergeFeature,
     imageToolsFeature,
     punctuationFeature,
     docUtilsFeature,

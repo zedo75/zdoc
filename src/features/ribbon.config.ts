@@ -14,6 +14,7 @@ import { assembleRibbon } from "#kernel/ribbon";
 import docUtilsRibbon from "./doc-utils/ribbon.ts";
 import govDocRibbon from "./gov-doc/ribbon.ts";
 import imageToolsRibbon from "./image-tools/ribbon.ts";
+import mailMergeRibbon from "./mail-merge/ribbon.ts";
 import punctuationRibbon from "./punctuation/ribbon.ts";
 import textCompareRibbon from "./text-compare/ribbon.ts";
 
@@ -26,6 +27,7 @@ import textCompareRibbon from "./text-compare/ribbon.ts";
 const ribbonExtensions = [
     govDocRibbon,
     textCompareRibbon,
+    mailMergeRibbon,
     imageToolsRibbon,
     punctuationRibbon,
     docUtilsRibbon,
