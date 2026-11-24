@@ -15,6 +15,7 @@ import { docUtilsFeature } from "@/features/doc-utils";
 import { govDocFeature } from "@/features/gov-doc";
 import { imageToolsFeature } from "@/features/image-tools";
 import { punctuationFeature } from "@/features/punctuation";
+import { textCompareFeature } from "@/features/text-compare";
 
 import { collectExtensionActionIds } from "./control-ids";
 
@@ -25,6 +26,7 @@ import { collectExtensionActionIds } from "./control-ids";
  */
 export const features: FeaturePlugin[] = [
     govDocFeature,
+    textCompareFeature,
     imageToolsFeature,
     punctuationFeature,
     docUtilsFeature,

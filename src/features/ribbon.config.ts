@@ -15,6 +15,7 @@ import docUtilsRibbon from "./doc-utils/ribbon.ts";
 import govDocRibbon from "./gov-doc/ribbon.ts";
 import imageToolsRibbon from "./image-tools/ribbon.ts";
 import punctuationRibbon from "./punctuation/ribbon.ts";
+import textCompareRibbon from "./text-compare/ribbon.ts";
 
 /**
  * 参与功能区装配的插件。
@@ -22,7 +23,13 @@ import punctuationRibbon from "./punctuation/ribbon.ts";
  * 数组顺序即插件注册顺序：同一容器里权重相同的控件按这个顺序排列，
  * 与 `kernel/registry.ts` 的 `features` 顺序保持一致。
  */
-const ribbonExtensions = [govDocRibbon, imageToolsRibbon, punctuationRibbon, docUtilsRibbon];
+const ribbonExtensions = [
+    govDocRibbon,
+    textCompareRibbon,
+    imageToolsRibbon,
+    punctuationRibbon,
+    docUtilsRibbon,
+];
 
 /** 生成 ribbon.xml 用的配置 */
 export const xmlConfig = assembleRibbon(ribbonExtensions);
