@@ -18,6 +18,7 @@ import { govDocFeature } from "@/features/gov-doc";
 import { imageToolsFeature } from "@/features/image-tools";
 import { mailMergeFeature } from "@/features/mail-merge";
 import { punctuationFeature } from "@/features/punctuation";
+import { tableFeature } from "@/features/table";
 import { textCompareFeature } from "@/features/text-compare";
 
 import { collectExtensionActionIds } from "./control-ids";
@@ -35,6 +36,7 @@ export const features: FeaturePlugin[] = [
     formatCheckFeature,
     imageToolsFeature,
     punctuationFeature,
+    tableFeature,
     docUtilsFeature,
 ];
 

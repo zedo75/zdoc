@@ -18,6 +18,7 @@ import govDocRibbon from "./gov-doc/ribbon.ts";
 import imageToolsRibbon from "./image-tools/ribbon.ts";
 import mailMergeRibbon from "./mail-merge/ribbon.ts";
 import punctuationRibbon from "./punctuation/ribbon.ts";
+import tableRibbon from "./table/ribbon.ts";
 import textCompareRibbon from "./text-compare/ribbon.ts";
 
 /**
@@ -34,6 +35,7 @@ const ribbonExtensions = [
     formatCheckRibbon,
     imageToolsRibbon,
     punctuationRibbon,
+    tableRibbon,
     docUtilsRibbon,
 ];
 
