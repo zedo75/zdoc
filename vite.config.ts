@@ -34,27 +34,61 @@ export default defineConfig(({ mode }) => {
         build: {
             rolldownOptions: {
                 output: {
+                    strictExecutionOrder: true,
                     codeSplitting: {
                         groups: [
-                            { name: "vendor", test: "node_modules" },
+                            // Vue 生态：稳定、极少变更，独立分组便于长期缓存与混淆跳过
                             {
-                                name: "main",
+                                name: "vendor-vue",
+                                test: /node_modules[\\/](vue|@vue|vue-router|pinia)[\\/]/,
+                                entriesAware: true,
+                                entriesAwareMergeThreshold: 28000, // 合并过小的子 chunk
+                            },
+                            // Element Plus：UI 库，独立分组
+                            {
+                                name: "vendor-element-plus",
+                                test: /node_modules[\\/](element-plus|@element-plus)[\\/]/,
+                                entriesAware: true,
+                                entriesAwareMergeThreshold: 28000,
+                            },
+                            // 其余 node_modules：兜底 vendor 组，仍然启用 entriesAware 保持精度
+                            {
+                                name: "vendor-misc",
+                                test: /node_modules/,
+                                entriesAware: true,
+                                entriesAwareMergeThreshold: 28000,
+                            },
+                            // 业务代码
+                            {
+                                name: "app",
                                 test: (id) => {
                                     const normalized = id.replace(/\\/g, "/");
-                                    // 在 src 目录下的 ts/vue 文件
-                                    const isInSrc = normalized.includes("/src/");
-                                    const isTargetExt = /\.([jt]s|vue)$/.test(normalized);
-                                    // 排除 dialogs 目录
-                                    const isInDialogs = normalized.includes("/components/dialogs/");
-
-                                    return isInSrc && !isInDialogs && isTargetExt;
+                                    return (
+                                        normalized.includes("/src/") &&
+                                        /\.(js|ts|vue)$/.test(normalized)
+                                    );
                                 },
+                                entriesAware: true,
+                                entriesAwareMergeThreshold: 28000,
                             },
                         ],
                     },
+                    chunkFileNames: (chunkInfo) => {
+                        // 取第一个入口名作为基础前缀
+                        const prefix = chunkInfo.name.split("~")[0] || "chunk";
+                        return `assets/${prefix}-[hash:8].js`;
+                    },
+                    assetFileNames: (assetInfo) => {
+                        const name = assetInfo.name ?? "asset";
+                        // 只对 CSS 截断
+                        if (name.endsWith(".css")) {
+                            const prefix = name.split("~")[0] || "style";
+                            return `assets/${prefix}-[hash:8][extname]`;
+                        }
+                        return `assets/[name]-[hash:8][extname]`;
+                    },
                 },
             },
-            chunkSizeWarningLimit: 1000,
         },
         plugins: [
             vue(),
@@ -80,8 +114,8 @@ export default defineConfig(({ mode }) => {
                     }),
                 ],
                 dts: "src/components.d.ts",
-                // 仅扫描必要目录
-                dirs: ["src/components", "src/views"],
+                // 只自动注册共享 UI 组件；插件自己的组件由插件显式 import，避免全局命名空间膨胀
+                dirs: ["src/components"],
                 // 限制文件扩展名，只处理 .vue
                 extensions: ["vue"],
                 exclude: [/node_modules/, /\.test\.vue$/],

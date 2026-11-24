@@ -1,0 +1,62 @@
+name: Release
+
+# 只有推送 v* 形式的 tag 才会触发（例如 v1.1.0）
+on:
+    push:
+        tags:
+            - "v*"
+
+permissions:
+    contents: write # 创建 Release 需要写权限
+
+jobs:
+    release:
+        # 打包脚本依赖仓库内的 scripts/7za.exe，跑在 Windows 上与最终用户环境一致
+        runs-on: windows-latest
+        timeout-minutes: 15
+
+        steps:
+            - name: 检出代码
+              uses: actions/checkout@v4
+
+            - name: 安装 pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 12.14.0
+
+            - name: 安装 Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: pnpm
+
+            - name: 安装依赖
+              run: pnpm install --frozen-lockfile
+
+            - name: 校验 tag 与 package.json 版本一致
+              shell: pwsh
+              env:
+                  TAG_NAME: ${{ github.ref_name }}
+              run: |
+                  $tag = $env:TAG_NAME
+                  $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+                  if ($tag -ne "v$version") {
+                      throw "tag $tag 与 package.json 的 version $version 不一致，请先同步版本号"
+                  }
+                  Write-Host "版本校验通过：$version"
+
+            - name: 单元测试
+              run: pnpm exec vitest run --reporter=dot
+
+            - name: 构建
+              run: pnpm build
+
+            - name: 打包 7z
+              run: pnpm build:7z
+
+            - name: 创建 Release 并上传 7z
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: wps-addon-build/*.7z
+                  fail_on_unmatched_files: true
+                  generate_release_notes: true

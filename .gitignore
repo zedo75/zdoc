@@ -1,6 +1,7 @@
 node_modules
 dist
 .vitest/
+.tmp/
 
 # wpsjs build 或 publish 使用的目录
 wps-addon-*
@@ -18,3 +19,10 @@ wps-env.d.ts
 
 # debug logs
 debug.log
+
+# 暂不入库：构建产物分析输出
+result.txt
+
+# 暂不入库：打包用二进制（release.yml 依赖 scripts/7za.exe，发版前需补提交）
+scripts/7za.exe
+scripts/install-zdoc.exe

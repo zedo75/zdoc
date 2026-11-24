@@ -8,6 +8,11 @@
     "editor.codeActionsOnSave": {
         "source.fixAll.prettier": "explicit"
     },
+    "js/ts.tsserver.maxMemory": 2048,
+    "files.watcherExclude": {
+        "**/node_modules/**": true,
+        "**/dist/**": true
+    },
     // 自动导入模块时优先使用 tsconfig/jsconfig 中 paths 定义的别名（如 @/utils/xxx），
     "js/ts.preferences.importModuleSpecifier": "non-relative",
     // 自动导入路径末尾尽量精简：省略文件扩展名（.ts/.js 等），
@@ -25,7 +30,9 @@
         "kingsoft",
         "kwps",
         "lefthook",
+        "numfmt",
         "nums",
+        "OOXML",
         "pagenum",
         "picklist",
         "predev",
@@ -35,6 +42,7 @@
         "screentip",
         "supertip",
         "taskpane",
+        "Textboxes",
         "vite",
         "vitest",
         "vnode",

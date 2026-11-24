@@ -12,6 +12,7 @@
         "build:install": "node scripts/wps.js install",
         "build:zip": "wpsjs build",
         "build:exe": "wpsjs build --exe",
+        "build:7z": "node scripts/pack-7z.mjs",
         "prepreview": "node scripts/wps.js dev --port 4173",
         "preview": "vite preview",
         "fmt": "prettier --write src/ && prettier --write plugins/*/src/**/*.{js,ts}",
