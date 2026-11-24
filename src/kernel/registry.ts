@@ -13,6 +13,7 @@ import type { DialogSpec, FeaturePlugin, PaneSpec } from "./types";
 
 import { batchFeature } from "@/features/batch";
 import { docUtilsFeature } from "@/features/doc-utils";
+import { formatCheckFeature } from "@/features/format-check";
 import { govDocFeature } from "@/features/gov-doc";
 import { imageToolsFeature } from "@/features/image-tools";
 import { mailMergeFeature } from "@/features/mail-merge";
@@ -31,6 +32,7 @@ export const features: FeaturePlugin[] = [
     textCompareFeature,
     mailMergeFeature,
     batchFeature,
+    formatCheckFeature,
     imageToolsFeature,
     punctuationFeature,
     docUtilsFeature,

@@ -10,6 +10,7 @@
  */
 import { icons as batchIcons } from "@/features/batch/icons";
 import { icons as docUtilsIcons } from "@/features/doc-utils/icons";
+import { icons as formatCheckIcons } from "@/features/format-check/icons";
 import { icons as govDocIcons } from "@/features/gov-doc/icons";
 import { icons as imageToolsIcons } from "@/features/image-tools/icons";
 import { icons as textCompareIcons } from "@/features/text-compare/icons";
@@ -18,6 +19,7 @@ export const ICON_MAP: Partial<Record<RibbonControlId, ImageFileName>> = {
     ...govDocIcons,
     ...docUtilsIcons,
     ...textCompareIcons,
+    ...formatCheckIcons,
     ...imageToolsIcons,
     ...batchIcons,
 };

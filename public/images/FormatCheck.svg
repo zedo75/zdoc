@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+  <style type="text/css">
+    .outline {
+      fill: none;
+      stroke: #333840;
+      stroke-width: 1.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .accent {
+      fill: none;
+      stroke: #2f6bff;
+      stroke-width: 1.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .accent-fill {
+      fill: #ffffff;
+      stroke: #2f6bff;
+      stroke-width: 1.4;
+    }
+  </style>
+  <path
+    class="outline"
+    d="M2 1.75C2 1.33579 2.33579 1 2.75 1H9L12.5 4.5V14.25C12.5 14.6642 12.1642 15 11.75 15H2.75C2.33579 15 2 14.6642 2 14.25V1.75Z"
+  />
+  <path class="outline" d="M9 1V4.5H12.5" />
+  <path class="outline" d="M4.5 6H8.5M4.5 8.5H8M4.5 11H6.5" />
+  <circle class="accent-fill" cx="12" cy="12" r="3.2" />
+  <path class="accent" d="M10.4 12L11.4 13L13.6 10.6" />
+</svg>
