@@ -11,6 +11,7 @@
  */
 import { assembleRibbon } from "#kernel/ribbon";
 
+import batchRibbon from "./batch/ribbon.ts";
 import docUtilsRibbon from "./doc-utils/ribbon.ts";
 import govDocRibbon from "./gov-doc/ribbon.ts";
 import imageToolsRibbon from "./image-tools/ribbon.ts";
@@ -28,6 +29,7 @@ const ribbonExtensions = [
     govDocRibbon,
     textCompareRibbon,
     mailMergeRibbon,
+    batchRibbon,
     imageToolsRibbon,
     punctuationRibbon,
     docUtilsRibbon,

@@ -11,6 +11,7 @@
  */
 import type { DialogSpec, FeaturePlugin, PaneSpec } from "./types";
 
+import { batchFeature } from "@/features/batch";
 import { docUtilsFeature } from "@/features/doc-utils";
 import { govDocFeature } from "@/features/gov-doc";
 import { imageToolsFeature } from "@/features/image-tools";
@@ -29,6 +30,7 @@ export const features: FeaturePlugin[] = [
     govDocFeature,
     textCompareFeature,
     mailMergeFeature,
+    batchFeature,
     imageToolsFeature,
     punctuationFeature,
     docUtilsFeature,

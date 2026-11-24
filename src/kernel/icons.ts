@@ -8,6 +8,7 @@
  * 未登记的控件按 `${id}.png` 约定去 `public/images` 找；找不到时 WPS 显示空图标，
  * 不会崩。
  */
+import { icons as batchIcons } from "@/features/batch/icons";
 import { icons as docUtilsIcons } from "@/features/doc-utils/icons";
 import { icons as govDocIcons } from "@/features/gov-doc/icons";
 import { icons as imageToolsIcons } from "@/features/image-tools/icons";
@@ -18,6 +19,7 @@ export const ICON_MAP: Partial<Record<RibbonControlId, ImageFileName>> = {
     ...docUtilsIcons,
     ...textCompareIcons,
     ...imageToolsIcons,
+    ...batchIcons,
 };
 
 /** 计算控件对应的图片路径（相对加载项根目录） */
