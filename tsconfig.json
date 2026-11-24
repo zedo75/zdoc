@@ -6,6 +6,8 @@
         "paths": {
             "@/*": ["./src/*"]
         },
+        "noEmit": true, // 只做类型检查；构建由 Vite / Rolldown 负责
+        "allowImportingTsExtensions": true, // vite.config 通过原生 ESM 加载配置链，需要显式 .ts 后缀
         "module": "es2020", // 指定生成的模块代码标准（ES2020 支持动态 import、import.meta 等）
         "target": "es6", // 指定编译后的 JavaScript 目标版本（ES6/ES2015）
         "types": ["vite/client", "node", "vitest/globals", "element-plus/global"], // 包含的类型声明文件

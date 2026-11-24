@@ -20,7 +20,9 @@
         "test": "vitest"
     },
     "imports": {
-        "#vite-plugin-wps-enhance": "./plugins/vite-plugin-wps-enhance/src/index.ts"
+        "#vite-plugin-wps-enhance": "./plugins/vite-plugin-wps-enhance/src/index.ts",
+        "#vite-plugin-wps-enhance/factory": "./plugins/vite-plugin-wps-enhance/src/ribbon/factory.ts",
+        "#kernel/*": "./src/kernel/*.ts"
     },
     "dependencies": {
         "axios": "^1.20.0",

@@ -3,14 +3,12 @@ import { computed, onUnmounted, ref } from "vue";
 
 import {
     addBookmark,
-    applyRangeBorder,
     bookmarkExists,
-    clearRangeBorder,
     deleteBookmark,
     generateBookmarkName,
     getBookmarkText,
-} from "@/jsa/commands/bookmark";
-import { getFullParagraphRange } from "@/jsa/commands/document";
+} from "@/wps/bookmark";
+import { getFullParagraphRange } from "@/wps/range";
 
 /** 对外暴露的标记状态 */
 export type BookmarkStatus = "idle" | "marked" | "error";
@@ -57,12 +55,8 @@ export function useSelectionBookmark() {
         const range = getFullParagraphRange();
         if (!range) return null;
 
-        // 先清除旧边框（如果之前标记过同一段落）
-        clearRangeBorder(range);
-
         const name = generateBookmarkName();
         addBookmark(name, range);
-        applyRangeBorder(range);
 
         snapshotSource.value = {
             bookmarkName: name,
@@ -80,7 +74,7 @@ export function useSelectionBookmark() {
         const snap = snapshotSource.value;
         if (!snap) return;
 
-        deleteBookmark(snap.bookmarkName, (bk) => clearRangeBorder(bk.Range));
+        deleteBookmark(snap.bookmarkName);
 
         snapshotSource.value = null;
         lastCheckedText = "";

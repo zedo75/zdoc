@@ -10,7 +10,7 @@ import { loadEnv } from "vite";
 import bundleObfuscator from "vite-plugin-bundle-obfuscator";
 import { defineConfig } from "vitest/config";
 
-import { xmlConfig } from "./src/jsa/ribbon/xmlConfig.ts";
+import { xmlConfig } from "./src/features/ribbon.config.ts";
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd());

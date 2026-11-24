@@ -15,8 +15,8 @@ import {
     DEFAULT_TYPO_CONFIG,
     getDefaultConfigFull,
 } from "@/config/defaults";
+import { loadGovDocConfigFromFile, saveGovDocConfigToFile } from "@/config/persist";
 import { validateGovDocConfig } from "@/config/validator";
-import { loadGovDocConfigFromFile, saveGovDocConfigToFile } from "@/jsa/utils/fileSystem";
 import { clonePlainData } from "@/utils/clone";
 
 const KEY = {
@@ -117,3 +117,21 @@ export const useGovDocConfig = createGlobalState(() => {
         resetToDefault,
     };
 });
+
+let configInitialized = false;
+
+/**
+ * 启动时读取一次配置文件（幂等）。
+ *
+ * 由 `main.ts` 在空闲时调用；非 WPS 环境（浏览器调试）读取失败只告警，继续用默认值。
+ */
+export function initGovDocConfig(): void {
+    if (configInitialized) return;
+    configInitialized = true;
+
+    try {
+        useGovDocConfig().loadFromFile();
+    } catch (error) {
+        console.warn("加载配置失败（非 WPS 环境？）:", error);
+    }
+}

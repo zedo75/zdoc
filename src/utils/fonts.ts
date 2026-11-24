@@ -38,8 +38,11 @@ const chineseKeywords = ["小标宋", "黑体", "楷体", "仿宋", "宋体", "�
 const westernWhitelist = ["Times New Roman", "Nimbus Roman"];
 
 // ----- 缓存变量 -----
+// 注意：失败结果（不在 WPS 环境 / 浏览器不支持 API）同样要缓存，
+// 否则每次调用都会重新探测并重复输出告警。
 let cachedWpsResult: [string[], string[]] | null = null;
 let cachedBrowserResult: [string[], string[]] | null = null;
+let browserFontsPromise: Promise<[string[], string[]]> | null = null;
 
 /**
  * 获取 WPS 可用字体（限制白名单）
@@ -57,9 +60,14 @@ export function getWpsFonts(): [string[], string[]] {
         innerFonts = Application.FontNames;
     } catch (e) {
         console.warn("当前不在 WPS 环境中", e);
-        return emptyResult;
+        // 缓存失败结果，全局只告警一次
+        cachedWpsResult = emptyResult;
+        return [[], []];
     }
-    if (!innerFonts) return emptyResult;
+    if (!innerFonts) {
+        cachedWpsResult = emptyResult;
+        return [[], []];
+    }
     const fonts: string[] = [];
     for (let i = 1; i <= innerFonts.Count; i++) {
         fonts.push(innerFonts.Item(i));
@@ -90,8 +98,22 @@ export async function getBrowserFonts(): Promise<[string[], string[]]> {
         return [cachedBrowserResult[0].slice(), cachedBrowserResult[1].slice()];
     }
 
+    // 并发去重：queryLocalFonts 是异步的，缓存要等 await 之后才写入，
+    // 多个调用同时进来会各自发起一次查询（甚至多次弹授权框）。
+    if (!browserFontsPromise) {
+        browserFontsPromise = queryBrowserFonts().finally(() => {
+            browserFontsPromise = null;
+        });
+    }
+    const result = await browserFontsPromise;
+    // 共享同一个 Promise，但每个调用方拿到独立副本，避免互相修改
+    return [result[0].slice(), result[1].slice()];
+}
+
+async function queryBrowserFonts(): Promise<[string[], string[]]> {
     if (!("queryLocalFonts" in window)) {
         console.warn("当前浏览器不支持 queryLocalFonts API");
+        cachedBrowserResult = [[], []]; // 缓存失败结果，避免重复告警
         return [[], []];
     }
 
@@ -136,4 +158,11 @@ function sortByOrder(fonts: string[], order: string[]): string[] {
 
 export function getChineseFontSizeName(pt: number): string {
     return FONT_SIZE_MAP[pt] || "";
+}
+
+/** 清空内部缓存（仅用于测试 / HMR / 手动重试字体探测） */
+export function resetFontCaches(): void {
+    cachedWpsResult = null;
+    cachedBrowserResult = null;
+    browserFontsPromise = null;
 }

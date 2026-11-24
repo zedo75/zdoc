@@ -13,7 +13,7 @@
                         :key="act.label"
                         :content="act.tooltip"
                         :disabled="!act.tooltip"
-                        placement="top-end"
+                        placement="auto-start"
                     >
                         <el-button size="small" round :type="act.type" @click.stop="act.onClick">
                             {{ act.label }}
